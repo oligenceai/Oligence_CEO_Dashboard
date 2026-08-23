@@ -98,8 +98,12 @@ function applyData(data){
       item => `<li><b>${esc(item.title)}</b>${esc(item.detail)}</li>`);
   });
 
-  renderRows('groupProjectsBody', getPath(data,'group.projects'), p => `
-    <tr><td class="muted-cell" style="padding-left:20px;">${esc(p.brand)}</td><td class="name">${esc(p.task)}</td><td class="num">${esc(p.deadline)}</td></tr>`);
+  const projectsRowFn = p => `
+    <tr><td class="muted-cell" style="padding-left:20px;">${esc(p.brand)}</td><td class="name">${esc(p.task)}</td><td class="num">${esc(p.deadline)}</td><td class="muted-cell">${esc(p.status)}</td><td class="muted-cell">${esc(p.notes)}</td></tr>`;
+  renderRows('groupProjectsBody', getPath(data,'group.projects'), projectsRowFn);
+  renderRows('imfndProjectsBody', getPath(data,'imfnd.projects'), projectsRowFn);
+  renderRows('asProjectsBody', getPath(data,'as.projects'), projectsRowFn);
+  renderRows('oligenceProjectsBody', getPath(data,'oligence.projects'), projectsRowFn);
 
   const teamCardFn = t => {
     const score = Number(t.score) || 0;
@@ -214,20 +218,22 @@ function applyData(data){
   renderRows('oligencePlatformBreakdownBody', getPath(data,'oligence.platformBreakdown'), oligencePlatformRowFn);
 
   const subscriptionsRowFn = s => `
-    <tr><td class="name" style="padding-left:20px;">${esc(s.tool)}</td><td class="muted-cell">${esc(s.brands)}</td><td class="num">${esc(s.monthlyCost)}</td><td class="muted-cell">${esc(s.billingCycle)}</td><td class="muted-cell">${esc(s.renewingDate)}</td><td class="muted-cell">${esc(s.paymentMethod)}</td><td class="muted-cell">${esc(s.status)}</td></tr>`;
+    <tr><td class="name" style="padding-left:20px;">${esc(s.tool)}</td><td class="muted-cell">${esc(s.brands)}</td><td class="num">${esc(s.monthlyCost)}</td><td class="muted-cell">${esc(s.billingCycle)}</td><td class="muted-cell">${esc(s.renewingDate)}</td><td class="muted-cell">${esc(s.paymentMethod)}</td><td class="muted-cell">${esc(s.status)}</td><td class="muted-cell">${esc(s.notes)}</td></tr>`;
   renderRows('oligenceSubscriptionsBody', getPath(data,'oligence.subscriptions'), subscriptionsRowFn);
+  renderRows('imfndSubscriptionsBody', getPath(data,'imfnd.subscriptions'), subscriptionsRowFn);
+  renderRows('asSubscriptionsBody', getPath(data,'as.subscriptions'), subscriptionsRowFn);
 
   // Labels with no matching column anywhere in the Google Sheet (verified
   // against each tab's own documentation row) — flagged red so they're
   // never mistaken for a card that's just waiting on live data.
-  const NO_SOURCE_LABELS = new Set(['Paid Revenue', 'Organic Revenue']);
+  const NO_SOURCE_LABELS = new Set([]);
   const kpiGridFn = k => `
     <div class="card kpi"${NO_SOURCE_LABELS.has(k.label) ? ' style="background:#FEF2F2;"' : ''}>
       <div class="k-top"><span class="k-lbl">${esc(k.label)}</span><span class="pill ${esc(k.pillColor||'grey')}">${esc(k.pillLabel||'')}</span></div>
       <div class="k-val"${k.valSize?` style="font-size:${k.valSize};"`:''}>${esc(k.value)}${k.unit?` <span style="font-size:13px;color:var(--muted-2);">${esc(k.unit)}</span>`:''}</div>
       ${k.delta ? `<div class="k-delta ${esc(k.deltaDirection||'flat')}">${k.deltaDirection==='up'?'▲ ':k.deltaDirection==='down'?'▼ ':''}${esc(k.delta)}</div>` : (k.sub ? `<div class="k-sub">${esc(k.sub)}</div>` : '')}
     </div>`;
-  const imfndKeyMetricsLabels = ['Fatma Total Revenue (EGP)','Paid Revenue','Organic Revenue','Fatma Achievement (%) 1','Fatma Total Leads','Fatma Cost / Paid leads','Fatma New Tickets Sold','Fatma Organic New Tickets','Fatma Paid New Tickets','Fatma total Conversion Rate (%)','Fatma Organic Conversion Rate (%)','Fatma Paid Conversion Rate (%)','Fatma Total Spend ($)','Fatma Cost / Paid New Tickets (EGP)','Fatma Total ROAS','Fatma Paid ROAS','Fatma Refund Value (EGP)','Khaled Clicks','Khaled CPC ($)','Khaled CPM ($)','Khaled CTR (%)'];
+  const imfndKeyMetricsLabels = ['Fatma Total Revenue (EGP)','Khaled Total PAID Revenue (EGP)','Khaled Total Organic Revenue (EGP)','Fatma Achievement (%) 1','Fatma Total Leads','Fatma Cost / Paid leads','Fatma New Tickets Sold','Fatma Organic New Tickets','Fatma Paid New Tickets','Fatma total Conversion Rate (%)','Fatma Organic Conversion Rate (%)','Fatma Paid Conversion Rate (%)','Fatma Total Spend ($)','Fatma Cost / Paid New Tickets (EGP)','Fatma Total ROAS','Fatma Paid ROAS','Fatma Refund Value (EGP)','Khaled Clicks','Khaled CPC ($)','Khaled CPM ($)','Khaled CTR (%)'];
   renderFixedMetricGrid('imfndKeyMetrics', getPath(data,'imfnd.keyMetrics'), imfndKeyMetricsLabels, kpiGridFn);
   const asB2cMetricsLabels = ['Nourhan B2C Sales new tickets revenue (EGP)','Nourhan total new Tickets sold','Nourhan total leads','Nourhan New Tickets Sold - new Organic / - paid'];
   renderRows('asB2cMetrics', getPath(data,'as.b2cMetrics'), (k, i) => kpiGridFn({ ...k, label: asB2cMetricsLabels[i] || k.label }));

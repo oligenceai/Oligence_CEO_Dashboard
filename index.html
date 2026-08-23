@@ -156,33 +156,10 @@
 <tbody data-repeat="group.cashflowAlerts" id="groupAlertsBody"></tbody>
 </table>
 </div>
-<div class="sec-head" data-section="home"><div><h2>CEO Decision Matrix</h2></div></div>
-<div class="dec-grid" style="margin-bottom:20px;">
-<div class="dec-col">
-<div class="dec-head scale">Scale</div>
-<ul data-repeat="group.decisions.scale" id="groupDecScale"></ul>
-</div>
-<div class="dec-col">
-<div class="dec-head fix">Fix</div>
-<ul data-repeat="group.decisions.fix" id="groupDecFix"></ul>
-</div>
-<div class="dec-col">
-<div class="dec-head stop">Stop</div>
-<ul data-repeat="group.decisions.stop" id="groupDecStop"></ul>
-</div>
-<div class="dec-col">
-<div class="dec-head automate">Automate</div>
-<ul data-repeat="group.decisions.automate" id="groupDecAutomate"></ul>
-</div>
-<div class="dec-col">
-<div class="dec-head escalate">Escalate</div>
-<ul data-repeat="group.decisions.escalate" id="groupDecEscalate"></ul>
-</div>
-</div>
 <div class="sec-head"><div><h2>Active Projects &amp; Deadlines</h2><div class="sub">Cross-brand roadmap, sorted by due date.</div></div></div>
 <div class="card" style="padding:0; margin-bottom:20px;">
 <table>
-<thead><tr><th style="padding-left:20px;">Brand</th><th>Task</th><th>Deadline</th></tr></thead>
+<thead><tr><th style="padding-left:20px;">Khaled Brand</th><th>Khaled Name of the task</th><th>Khaled Deadline</th><th>Khaled satus</th><th>Khaled notes</th></tr></thead>
 <tbody data-repeat="group.projects" id="groupProjectsBody"></tbody>
 </table>
 </div>
@@ -259,12 +236,12 @@
 </div>
 <div class="sec-head"><div><h2>Revenue &amp; Efficiency Detail</h2></div></div>
 <div class="grid-4" style="margin-bottom:16px;">
-<div class="card kpi" style="background:#FEF2F2;">
-<div class="k-top"><span class="k-lbl">Paid Revenue</span><span class="pill green"></span></div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled Total PAID Revenue (EGP)</span><span class="pill green"></span></div>
 <div class="k-val"></div>
 </div>
-<div class="card kpi" style="background:#FEF2F2;">
-<div class="k-top"><span class="k-lbl">Organic Revenue</span><span class="pill green"></span></div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled Total Organic Revenue (EGP)</span><span class="pill green"></span></div>
 <div class="k-val"></div>
 </div>
 <div class="card kpi" style="background:#FEFCE8;">
@@ -275,6 +252,13 @@
 <div class="k-top"><span class="k-lbl">Fatma Paid ROAS</span><span class="pill green"></span></div>
 <div class="k-val" data-field="imfnd.revenueEfficiency.paidRoas"></div>
 </div>
+</div>
+<div class="sec-head"><div><h2>Cost Base &amp; Subscriptions</h2><div class="sub">Fixed + variable · IMFND-specific tools</div></div></div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Nouran Subscription / Tool-IMFND</th><th>Nouran Brand(s) Served-IMFND</th><th>Nouran Monthly Cost (EGP)-IMFND</th><th>Nouran Billing Cycle-IMFND</th><th>Nouran renewing date-IMFND</th><th>Nouran Payment Method-IMFND</th><th>Nouran Status-IMFND</th><th>Nouran Notes-IMFND</th></tr></thead>
+<tbody data-repeat="imfnd.subscriptions" id="imfndSubscriptionsBody"></tbody>
+</table>
 </div>
 <div class="sec-head" data-section="operations"><div><h2>Operations</h2><div class="sub">Delivery, fulfillment and training cohorts — moved here from Sales Detail.</div></div></div>
 <div class="sec-head"><div><h3 style="font-size:13px;font-weight:800;">Training Programs — Delivered</h3><div class="sub">Closed cohorts vs. target, by course</div></div></div>
@@ -346,6 +330,13 @@
 <thead><tr><th style="padding-left:20px;">Platform</th><th>Fatma Views</th><th>Fatma engagment</th><th>Fatma new followers</th></tr></thead>
 <tbody data-repeat="imfnd.platformBreakdown" id="imfndPlatformBreakdownBody"></tbody>
 </table>
+</div>
+<div class="sec-head" data-section="projects" style="margin-top:0;"><div><h2>Active Projects &amp; Deadlines</h2></div></div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Khaled Brand</th><th>Khaled Name of the task</th><th>Khaled Deadline</th><th>Khaled satus</th><th>Khaled notes</th></tr></thead>
+<tbody data-repeat="imfnd.projects" id="imfndProjectsBody"></tbody>
+</table>
 </div></div>
 <!-- ======================================================= -->
 <!-- PAGE 3 — AS PERSONAL BRAND                                -->
@@ -392,13 +383,13 @@
 <div class="k-val" data-field="as.keyMetricsDetail.b2cRevenue"></div>
 <div class="k-sub"></div>
 </div>
-<div class="card kpi" style="background:#FEF2F2;">
-<div class="k-top"><span class="k-lbl">Paid Revenue</span><span class="pill grey"></span></div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled Total PAID Revenue (EGP)</span><span class="pill grey"></span></div>
 <div class="k-val"></div>
 <div class="k-sub"></div>
 </div>
-<div class="card kpi" style="background:#FEF2F2;">
-<div class="k-top"><span class="k-lbl">Organic Revenue</span><span class="pill grey"></span></div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled Total Organic Revenue (EGP)</span><span class="pill grey"></span></div>
 <div class="k-val"></div>
 <div class="k-sub"></div>
 </div>
@@ -580,6 +571,20 @@
 <div class="k-val" style="font-size:16px;" data-field="as.cashFlow.netCashFlow"></div>
 </div>
 </div>
+<div class="sec-head"><div><h2>Cost Base &amp; Subscriptions</h2><div class="sub">Fixed + variable · AS-specific tools</div></div></div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Nouran Subscription / Tool-AS</th><th>Nouran Brand(s) Served-AS</th><th>Nouran Monthly Cost (EGP)-AS</th><th>Nouran Billing Cycle-AS</th><th>Nouran renewing date-AS</th><th>Nouran Payment Method-AS</th><th>Nouran Status-AS</th><th>Nouran Notes-AS</th></tr></thead>
+<tbody data-repeat="as.subscriptions" id="asSubscriptionsBody"></tbody>
+</table>
+</div>
+<div class="sec-head" data-section="projects"><div><h2>Active Projects &amp; Deadlines</h2></div></div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Khaled Brand</th><th>Khaled Name of the task</th><th>Khaled Deadline</th><th>Khaled satus</th><th>Khaled notes</th></tr></thead>
+<tbody data-repeat="as.projects" id="asProjectsBody"></tbody>
+</table>
+</div>
 </div>
 <!-- ======================================================= -->
 <!-- PAGE 4 — OLIGENCE AGENCY                                  -->
@@ -631,15 +636,15 @@
 <div class="k-top"><span class="k-lbl">Khaled Spend (EGP)</span><span class="pill blue"></span></div>
 <div class="k-val" data-field="oligence.marketingMetrics.adSpend"></div>
 </div>
-<div class="card kpi" style="background:#FEF2F2;">
-<div class="k-top"><span class="k-lbl">Pipeline (# open)</span><span class="pill grey"></span></div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Basant Pipeline - Quotation (#)</span><span class="pill grey"></span></div>
 <div class="k-val"></div>
 </div>
-<div class="card kpi" style="background:#FEF2F2;">
-<div class="k-top"><span class="k-lbl">Pipeline Value (EGP)</span><span class="pill grey"></span></div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Basant Pipeline - Quotation value</span><span class="pill grey"></span></div>
 <div class="k-val"></div>
 </div>
-<div class="card kpi" style="background:#FEF2F2;">
+<div class="card kpi">
 <div class="k-top"><span class="k-lbl">Companies Approached</span><span class="pill grey"></span></div>
 <div class="k-val"></div>
 </div>
@@ -736,38 +741,25 @@
 </div>
 <div class="sec-head" data-section="finance"><div><h2>Revenue Recognition</h2><div class="sub">Total revenue, what's landed, and what's still pending or overdue — matches Basant's agency log.</div></div></div>
 <div class="grid-5" data-repeat="oligence.revenueMetrics" id="oligenceRevenueMetrics" style="margin-bottom:16px;"></div>
-<div class="sec-head"><div><h2>Cost Base &amp; Subscriptions</h2><div class="sub">Fixed + variable · company‑wide, not yet split by account</div></div></div>
-<div class="grid-4" style="margin-bottom:16px;">
+<div class="grid-3" style="margin-bottom:16px;">
 <div class="card kpi">
 <div class="k-top"><span class="k-lbl">Nouran Cash Out - Salaries Allocated (EGP)</span><span class="pill grey"></span></div>
 <div class="k-val" data-field="oligence.costBase.salaries"></div>
-</div>
-<div class="card kpi" style="background:#FEF2F2;">
-<div class="k-top"><span class="k-lbl">IMFND Ad Spend</span><span class="pill grey"></span></div>
-<div class="k-val"></div>
-</div>
-<div class="card kpi" style="background:#FEFCE8;">
-<div class="k-top"><span class="k-lbl">Khaled Spend (EGP)</span><span class="pill amber"></span></div>
-<div class="k-val" data-field="oligence.marketingMetrics.adSpend"></div>
-</div>
-<div class="card kpi" style="background:#FEF2F2;">
-<div class="k-top"><span class="k-lbl">Fixed Run‑Rate</span><span class="pill grey"></span></div>
-<div class="k-val"></div>
-<div class="k-sub"></div>
 </div>
 <div class="card kpi">
 <div class="k-top"><span class="k-lbl">Nouran number of Cash In Payments ( AS / IMFND) + Nouran Cash In — # Transactions</span><span class="pill grey"></span></div>
 <div class="k-val" style="font-size:16px;" data-field="oligence.costBase.cashInPayments"></div>
 <div class="k-sub"></div>
 </div>
-<div class="card kpi" style="background:#FEFCE8;">
+<div class="card kpi">
 <div class="k-top"><span class="k-lbl">Basant MER - Oligence (blended)</span><span class="pill grey"></span></div>
 <div class="k-val" style="font-size:16px;" data-field="oligence.marketingMetrics.mer"></div>
 </div>
 </div>
+<div class="sec-head"><div><h2>Cost Base &amp; Subscriptions</h2><div class="sub">Fixed + variable · company‑wide, not yet split by account</div></div></div>
 <div class="card" style="padding:0; margin-bottom:16px;">
 <table>
-<thead><tr><th style="padding-left:20px;">Nouran Subscription / Tool</th><th>Nouran Brand(s) Served</th><th>Nouran Monthly Cost (EGP)</th><th>Nouran Billing Cycle</th><th>Nouran renewing date</th><th>Nouran Payment Method</th><th>Nouran Status</th></tr></thead>
+<thead><tr><th style="padding-left:20px;">Nouran Subscription / Tool-OLIGENCE</th><th>Nouran Brand(s) Served-OLIGENCE</th><th>Nouran Monthly Cost (EGP)-OLIGENCE</th><th>Nouran Billing Cycle -OLIGENCE</th><th>Nouran renewing date -OLIGENCE</th><th>Nouran Payment Method-OLIGENCE</th><th>Nouran Status-OLIGENCE</th><th>Nouran Notes-OLIGENCE</th></tr></thead>
 <tbody data-repeat="oligence.subscriptions" id="oligenceSubscriptionsBody"></tbody>
 </table>
 </div>
@@ -781,6 +773,13 @@
 <div style="font-size:10.5px; color:var(--muted-2); font-style:italic; margin:-14px 0 20px;">Cash Out and Net Cash Flow aren't split by account yet — see Oligence › Finance › Cost Base for the company‑wide total.</div>
 <div class="sec-head" data-section="operations"><div><h2>Team Scorecards</h2><div class="sub">Delivery capacity, team scorecards, tracking gaps and next-step accounts. Each card = one row from either Basant team member / Basant rank / Basant note, or Rana team member / Rana rank / Rana note (both in the OLIGENCE tab) — the same person can appear twice if rated in both blocks.</div></div></div>
 <div class="grid-3" data-repeat="oligence.teamPulse" id="oligenceTeamPulse" style="margin-bottom:16px;"></div>
+<div class="sec-head" data-section="projects"><div><h2>Active Projects &amp; Deadlines</h2></div></div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Khaled Brand</th><th>Khaled Name of the task</th><th>Khaled Deadline</th><th>Khaled satus</th><th>Khaled notes</th></tr></thead>
+<tbody data-repeat="oligence.projects" id="oligenceProjectsBody"></tbody>
+</table>
+</div>
 </div>
 </div>
 </div>

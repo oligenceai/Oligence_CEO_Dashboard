@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Oligence · CEO Intelligence</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="styles.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="app">
+<!-- ============ HEADER ============ -->
+<div class="topbar full">
+<div class="topbar-brand">
+<div class="mark">
+<svg viewbox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(50,50)">
+<polygon fill="var(--teal)" points="0,0 0,-40 35,-15"></polygon>
+<polygon fill="var(--teal)" points="0,0 0,-40 35,-15" transform="rotate(120)"></polygon>
+<polygon fill="var(--purple)" points="0,0 0,-40 35,-15" transform="rotate(240)"></polygon>
+</g>
+</svg>
+</div>
+<div class="lbl">
+<div class="t1">Oligence</div>
+<div class="t2">CEO Intelligence</div>
+</div>
+</div>
+<div class="tab-group" id="tabGroup">
+<div class="tab active" data-page="group">Group</div>
+<div class="tab" data-page="imfnd">IMFND</div>
+<div class="tab" data-page="as">AS</div>
+<div class="tab" data-page="oligence">Oligence</div>
+</div>
+<div class="topbar-actions">
+<div class="period-pill" id="periodPill" onclick="togglePeriodMenu(event)">
+<span id="periodLabel">All Data</span> ▾
+        <div class="period-menu" id="periodMenu">
+<div class="period-opt active" data-mode="all" onclick="setAllPeriod(event)">All Data</div>
+<div class="period-opt has-sub" data-mode="filtered" onclick="event.stopPropagation()">
+            Filter by Month &amp; Week <span class="sub-caret">▸</span>
+<div class="period-custom">
+<label>Month</label>
+<select id="periodMonth">
+<option value="">Select month</option>
+<option value="January">January</option>
+<option value="February">February</option>
+<option value="March">March</option>
+<option value="April">April</option>
+<option value="May">May</option>
+<option value="June">June</option>
+<option value="July">July</option>
+<option value="August">August</option>
+<option value="September">September</option>
+<option value="October">October</option>
+<option value="November">November</option>
+<option value="December">December</option>
+</select>
+<label>Week</label>
+<div class="week-check-group" id="periodWeek">
+<label class="week-check-opt"><input type="checkbox" value="week 1"/> Week 1</label>
+<label class="week-check-opt"><input type="checkbox" value="week 2"/> Week 2</label>
+<label class="week-check-opt"><input type="checkbox" value="week 3"/> Week 3</label>
+<label class="week-check-opt"><input type="checkbox" value="week 4"/> Week 4</label>
+<label class="week-check-opt"><input type="checkbox" value="month"/> Month</label>
+</div>
+<button class="apply-btn" onclick="applyFilteredPeriod(event)">Apply</button>
+</div>
+</div>
+</div>
+</div>
+<span id="syncStatus" style="font-size:11px; color:var(--muted-2); margin-right:2px; white-space:nowrap;"></span>
+<div class="btn ghost" id="refreshBtn" onclick="handleRefreshClick()">Refresh</div>
+</div>
+</div>
+<div id="syncErrorBanner" style="display:none; background:var(--red-soft); color:var(--red); border-bottom:1px solid #F4C6C6; padding:8px 32px; font-size:12px; font-weight:600;"></div>
+<!-- ============ BODY (section rail + main) ============ -->
+<div class="body-row">
+<!-- ============ SECTION RAIL ============ -->
+<div class="sidebar show-home">
+<div class="sidebar-label">Sections</div>
+<div class="nav-item home-only active" data-section="home">
+<span class="ic"><svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"></path></svg></span>
+        Executive Home
+      </div>
+<div class="sidebar-divider home-only"></div>
+<div class="nav-item" data-section="marketing">
+<span class="ic"><svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1Z"></path><path d="M15 8.5a4 4 0 0 1 0 7"></path><path d="M18 5.5a8 8 0 0 1 0 13"></path></svg></span>
+        Marketing
+      </div>
+<div class="nav-item" data-section="sales">
+<span class="ic"><svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 17 9.5 10.5 14 15 21 8"></path><path d="M15 8h6v6"></path></svg></span>
+        Sales
+      </div>
+<div class="nav-item" data-section="finance">
+<span class="ic"><svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><rect height="13" rx="2" width="18" x="3" y="6"></rect><path d="M3 10h18"></path><path d="M7 14.5h4"></path></svg></span>
+        Finance
+      </div>
+<div class="nav-item" data-section="operations">
+<span class="ic"><svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="2.8"></circle><path d="M19.4 13.5a7.5 7.5 0 0 0 0-3l1.9-1.5-2-3.4-2.3.6a7.6 7.6 0 0 0-2.6-1.5L14 2h-4l-.4 2.7a7.6 7.6 0 0 0-2.6 1.5l-2.3-.6-2 3.4L4.6 10.5a7.5 7.5 0 0 0 0 3L2.7 15l2 3.4 2.3-.6a7.6 7.6 0 0 0 2.6 1.5L10 22h4l.4-2.7a7.6 7.6 0 0 0 2.6-1.5l2.3.6 2-3.4Z"></path></svg></span>
+        Operations
+      </div>
+<div class="nav-item" data-section="projects">
+<span class="ic"><svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><rect height="17" rx="2" width="16" x="4" y="4"></rect><path d="M9 3v3M15 3v3"></path><path d="M8 12h8M8 16h5"></path></svg></span>
+        Projects
+      </div>
+</div>
+<!-- ============ MAIN ============ -->
+<div class="main">
+<div class="content">
+<!-- ======================================================= -->
+<!-- PAGE 2 — IMFND                                            -->
+<!-- ======================================================= -->
+<!-- ======================================================= -->
+<!-- PAGE — GROUP EXECUTIVE HOME (ALL 3 BRANDS)               -->
+<!-- ======================================================= -->
+<div class="page active" id="page-group">
+<div class="dash-subhead">
+<div>
+<h2>Business Performance Health</h2>
+</div>
+<div class="dash-subhead-right">
+<span class="pill amber" data-field="group.statusLabel" id="groupStatusPill"></span>
+<span class="health-score">Composite score <b data-field="group.compositeScore" id="groupCompositeScoreTop"></b></span>
+</div>
+</div>
+<div class="sec-head" data-section="home" style="margin-top:0;"><div><h2>Top-line</h2></div></div>
+<div class="grid-3" style="margin-bottom:20px;">
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Composite Score</span><span class="pill amber" data-field="group.statusLabel"></span></div>
+<div class="k-val" data-field="group.compositeScore"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Brands On Track</span><span class="pill green"></span></div>
+<div class="k-val" data-field="group.brandsOnTrack"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Brands At Risk</span><span class="pill red"></span></div>
+<div class="k-val" data-field="group.brandsAtRisk"></div>
+</div>
+</div>
+<div class="sec-head" data-section="home"><div><h2>Brand Health</h2></div></div>
+<div class="card" style="padding:0; margin-bottom:20px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Brand</th><th>Achievement</th></tr></thead>
+<tbody data-repeat="group.brands" id="groupBrandsBody"></tbody>
+</table>
+</div>
+<div class="sec-head" data-section="home"><div><h2>Cashflow &amp; Collections Alerts</h2><div class="sub">Nouran Net Cash Flow (EGP) (per brand) + Basant Overdue (EGP) / Basant Top Risk / Escalation (per Oligence client)</div></div></div>
+<div class="card" style="padding:0; margin-bottom:20px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Level</th><th>Source</th><th>Issue</th><th>Detail</th><th>Balance</th></tr></thead>
+<tbody data-repeat="group.cashflowAlerts" id="groupAlertsBody"></tbody>
+</table>
+</div>
+<div class="sec-head" data-section="home"><div><h2>CEO Decision Matrix</h2></div></div>
+<div class="dec-grid" style="margin-bottom:20px;">
+<div class="dec-col">
+<div class="dec-head scale">Scale</div>
+<ul data-repeat="group.decisions.scale" id="groupDecScale"></ul>
+</div>
+<div class="dec-col">
+<div class="dec-head fix">Fix</div>
+<ul data-repeat="group.decisions.fix" id="groupDecFix"></ul>
+</div>
+<div class="dec-col">
+<div class="dec-head stop">Stop</div>
+<ul data-repeat="group.decisions.stop" id="groupDecStop"></ul>
+</div>
+<div class="dec-col">
+<div class="dec-head automate">Automate</div>
+<ul data-repeat="group.decisions.automate" id="groupDecAutomate"></ul>
+</div>
+<div class="dec-col">
+<div class="dec-head escalate">Escalate</div>
+<ul data-repeat="group.decisions.escalate" id="groupDecEscalate"></ul>
+</div>
+</div>
+<div class="sec-head"><div><h2>Active Projects &amp; Deadlines</h2><div class="sub">Cross-brand roadmap, sorted by due date.</div></div></div>
+<div class="card" style="padding:0; margin-bottom:20px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Brand</th><th>Task</th><th>Deadline</th></tr></thead>
+<tbody data-repeat="group.projects" id="groupProjectsBody"></tbody>
+</table>
+</div>
+<div class="sec-head" data-section="home"><div><h2>Team Pulse</h2><div class="sub">Overtime and delivery scorecards, across the group. Each card = one row from either Basant team member / Basant rank / Basant note, or Rana team member / Rana rank / Rana note (both in the OLIGENCE tab) — the same person can appear twice if rated in both blocks.</div></div></div>
+<div class="grid-3" data-repeat="group.teamPulse" id="groupTeamPulse" style="margin-bottom:16px;"></div>
+</div>
+<!-- ======================================================= -->
+<!-- PAGE — IMFND                                             -->
+<!-- ======================================================= -->
+<div class="page" id="page-imfnd">
+<div class="dash-subhead">
+<div>
+<h2>IMFND Dashboard</h2>
+</div>
+<div class="dash-subhead-right">
+<span class="pill green" data-field="imfnd.statusLabel"></span>
+<span class="health-score">Health score <b data-field="imfnd.healthScore"></b></span>
+</div>
+</div>
+<div class="sec-head" data-section="home" style="margin-top:0;"><div><h2>Executive Home</h2><div class="sub">IMFND at a glance · current period</div></div></div>
+<div class="hero" style="margin-bottom:22px;">
+<div class="hero-top">
+<div>
+<div class="hero-eyebrow"><span class="sq"></span>ACCOUNT INTELLIGENCE BRIEFING</div>
+<h1>IMFND Business Health</h1>
+<div class="desc"></div>
+</div>
+<div class="hero-score">
+<div class="lbl">Health Score</div>
+<div class="val" data-field="imfnd.healthScore"></div>
+</div>
+</div>
+<div class="hero-stats" style="grid-template-columns:repeat(5,1fr);">
+<div class="hero-stat"><div class="k">Fatma Total Revenue (EGP)</div><div class="v" data-field="imfnd.hero.totalRevenue"></div></div>
+<div class="hero-stat"><div class="k">Fatma Achievement (%) 1</div><div class="v" data-field="imfnd.hero.targetAchievement"></div></div>
+<div class="hero-stat"><div class="k">Fatma Total ROAS</div><div class="v" data-field="imfnd.hero.totalRoas"></div></div>
+<div class="hero-stat"><div class="k">Fatma Total Leads</div><div class="v" data-field="imfnd.hero.leads"></div></div>
+<div class="hero-stat"><div class="k">Fatma New Tickets Sold</div><div class="v" data-field="imfnd.hero.newTickets"></div></div>
+</div>
+</div>
+<div class="pillar-mini-grid" data-repeat="imfnd.pillars" id="imfndPillars"></div>
+<div class="sec-head" data-section="marketing"><div><h2>Key Metrics</h2><div class="sub">Every tracked metric for IMFND · current period</div></div></div>
+<div class="grid-4" data-repeat="imfnd.keyMetrics" id="imfndKeyMetrics" style="margin-bottom:16px;"></div>
+<div class="sec-head"><div><h2>ROAS by Program</h2><div class="sub">Fatma Top Program (dimension) · Fatma Top Program Revenue (EGP) (metric) — one bar per distinct program found in the matched rows.</div></div></div>
+<div class="card" id="imfndRoasByProgram" data-repeat="imfnd.roasByProgram" style="margin-bottom:16px;"></div>
+<div class="sec-head" data-section="sales"><div><h2>Lead Funnel</h2><div class="sub">Total leads to lost · July 2026</div></div></div>
+<div class="card" id="imfndLeadFunnel" data-repeat="imfnd.leadFunnel" style="margin-bottom:16px;"></div>
+<div class="sec-head"><div><h2>Training Programs — Pipeline</h2><div class="sub">Current bookings vs. capacity, by course</div></div></div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Fatma Training Programs name (Pipeline)</th><th>Fatma Tickets Closed (Pipeline)</th><th>Fatma Remaning</th><th>Fatma Target tickets (Pipeline)</th><th>Fatma Achievement (%) 5</th><th>Fatma Under Collection</th></tr></thead>
+<tbody data-repeat="imfnd.trainingPipeline" id="imfndTrainingPipelineBody"></tbody>
+</table>
+</div>
+<div class="sec-head" data-section="finance"><div><h2>Finance Snapshot</h2><div class="sub">Cash in / cash out, current period — mirrors Nouran's finance log</div></div></div>
+<div class="grid-4" style="margin-bottom:16px;">
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nouran Cash In (EGP)</span><span class="pill green"></span></div>
+<div class="k-val" data-field="imfnd.cashFlow.cashIn"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nouran Cash In — # Transactions</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="imfnd.cashFlow.cashInTransactions"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nouran Total Cash Out (EGP)</span><span class="pill amber"></span></div>
+<div class="k-val" data-field="imfnd.cashFlow.cashOut"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nouran Net Cash Flow (EGP)</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="imfnd.cashFlow.netCashFlow"></div>
+</div>
+</div>
+<div class="sec-head"><div><h2>Revenue &amp; Efficiency Detail</h2></div></div>
+<div class="grid-4" style="margin-bottom:16px;">
+<div class="card kpi" style="background:#FEF2F2;">
+<div class="k-top"><span class="k-lbl">Paid Revenue</span><span class="pill green"></span></div>
+<div class="k-val"></div>
+</div>
+<div class="card kpi" style="background:#FEF2F2;">
+<div class="k-top"><span class="k-lbl">Organic Revenue</span><span class="pill green"></span></div>
+<div class="k-val"></div>
+</div>
+<div class="card kpi" style="background:#FEFCE8;">
+<div class="k-top"><span class="k-lbl">Fatma Total ROAS</span><span class="pill green"></span></div>
+<div class="k-val" data-field="imfnd.hero.totalRoas"></div>
+</div>
+<div class="card kpi" style="background:#FEFCE8;">
+<div class="k-top"><span class="k-lbl">Fatma Paid ROAS</span><span class="pill green"></span></div>
+<div class="k-val" data-field="imfnd.revenueEfficiency.paidRoas"></div>
+</div>
+</div>
+<div class="sec-head" data-section="operations"><div><h2>Operations</h2><div class="sub">Delivery, fulfillment and training cohorts — moved here from Sales Detail.</div></div></div>
+<div class="sec-head"><div><h3 style="font-size:13px;font-weight:800;">Training Programs — Delivered</h3><div class="sub">Closed cohorts vs. target, by course</div></div></div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr style="font-size:9.5px;"><th style="padding-left:20px;">Fatma Training Programs name</th><th>Fatma Target tickets</th><th>Fatma Tickets Closed</th><th>Fatma Target revenue</th><th>Fatma  Sales revenue</th><th>Fatma Achievement (%) 4</th></tr></thead>
+<tbody data-repeat="imfnd.trainingDelivered" id="imfndTrainingDeliveredBody"></tbody>
+</table>
+</div>
+<div class="grid-4" style="margin-bottom:16px;">
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Fatma Online Orders</span><span class="pill green"></span></div>
+<div class="k-val" data-field="imfnd.operations.onlineOrders"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Fatma Offline Orders</span><span class="pill green"></span></div>
+<div class="k-val" data-field="imfnd.operations.offlineOrders"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Fatma Refunds (#)</span><span class="pill amber"></span></div>
+<div class="k-val" data-field="imfnd.operations.refunds"></div>
+</div>
+<div class="card kpi" style="background:#FEFCE8;">
+<div class="k-top"><span class="k-lbl">Fatma Refund Value (EGP)</span><span class="pill amber"></span></div>
+<div class="k-val" data-field="imfnd.operations.refundValue"></div>
+</div>
+</div>
+<div class="sec-head" data-section="marketing"><div><h2>Content</h2><div class="sub">Published output and platform performance — current period</div></div></div>
+<div class="grid-4" style="margin-bottom:16px;">
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Fatma Articles Published</span><span class="pill green"></span></div>
+<div class="k-val" data-field="imfnd.content.articlesPublished"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Fatma Carousels Published</span><span class="pill green"></span></div>
+<div class="k-val" data-field="imfnd.content.carouselsPublished"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Fatma Reels Published</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="imfnd.content.reelsPublished"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Fatma AI reels Published</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="imfnd.content.aiReelsPublished"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Fatma Emails Sent number of clients</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="imfnd.content.emailsSent"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Fatma bulk whatsapp sent number of clients</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="imfnd.content.whatsappSent"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Fatma Total Platform Views</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="imfnd.content.platformViews"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Fatma Total Platform engagment</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="imfnd.content.platformEngagement"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Fatma Total Platform New Followers</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="imfnd.content.platformNewFollowers"></div>
+</div>
+</div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Platform</th><th>Fatma Views</th><th>Fatma engagment</th><th>Fatma new followers</th></tr></thead>
+<tbody data-repeat="imfnd.platformBreakdown" id="imfndPlatformBreakdownBody"></tbody>
+</table>
+</div></div>
+<!-- ======================================================= -->
+<!-- PAGE 3 — AS PERSONAL BRAND                                -->
+<!-- ======================================================= -->
+<div class="page" id="page-as">
+<div class="dash-subhead">
+<div>
+<h2>AS Dashboard</h2>
+</div>
+<div class="dash-subhead-right">
+<span class="pill amber" data-field="as.statusLabel"></span>
+<span class="health-score">Health score <b data-field="as.healthScore"></b></span>
+</div>
+</div>
+<div class="sec-head" data-section="home" style="margin-top:0;"><div><h2>Executive Home</h2><div class="sub">AS at a glance · current period</div></div></div>
+<div class="hero" style="margin-bottom:22px;">
+<div class="hero-top">
+<div>
+<div class="hero-eyebrow"><span class="sq"></span>ACCOUNT INTELLIGENCE BRIEFING</div>
+<h1>AS Business Health</h1>
+<div class="desc"></div>
+</div>
+<div class="hero-score">
+<div class="lbl">Health Score</div>
+<div class="val" data-field="as.healthScore"></div>
+</div>
+</div>
+<div class="hero-stats" style="grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(2,1fr);">
+<div class="hero-stat"><div class="k">Nourhan B2C+B2B Revenue (sum)</div><div class="v" data-field="as.hero.totalRevenue"></div></div>
+<div class="hero-stat"><div class="k">Nourhan Achievement (%) B2C</div><div class="v" data-field="as.hero.targetAchievement"></div></div>
+<div class="hero-stat"><div class="k">Nourhan B2C Sales new tickets revenue (EGP)</div><div class="v" data-field="as.hero.b2cRevenue"></div></div>
+<div class="hero-stat"><div class="k">Nourhan total leads</div><div class="v" data-field="as.hero.b2cLeads"></div></div>
+<div class="hero-stat"><div class="k">Nourhan total new Tickets sold</div><div class="v" data-field="as.hero.b2cNewTickets"></div></div>
+<div class="hero-stat"><div class="k">Nourhan B2B Sales new tickets revenue (EGP)</div><div class="v" data-field="as.hero.b2bRevenue"></div></div>
+<div class="hero-stat"><div class="k">Nourhan B2B Pipeline (# open) + Value (EGP)</div><div class="v" data-field="as.hero.b2bPipeline"></div></div>
+<div class="hero-stat"><div class="k">Nourhan Tickets Sold + B2B Sales tickets number (sum)</div><div class="v" data-field="as.hero.signedAccounts"></div></div>
+</div>
+</div>
+<div style="font-size:10.5px; color:var(--muted-2); font-style:italic; margin-top:6px;">Total Revenue combines B2C + B2B but isn't consolidated into one monthly line yet — a flagged tracking gap.</div><div class="pillar-mini-grid" data-repeat="as.pillars" id="asPillars"></div>
+<div class="sec-head" data-section="marketing"><div><h2>Key Metrics</h2><div class="sub">Every tracked metric for AS · current period</div></div></div>
+<div class="grid-4" style="margin-bottom:16px;">
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan B2C Sales new tickets revenue (EGP)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.b2cRevenue"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi" style="background:#FEF2F2;">
+<div class="k-top"><span class="k-lbl">Paid Revenue</span><span class="pill grey"></span></div>
+<div class="k-val"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi" style="background:#FEF2F2;">
+<div class="k-top"><span class="k-lbl">Organic Revenue</span><span class="pill grey"></span></div>
+<div class="k-val"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Achievement (%) B2C</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.achievement"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan total leads</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.leads"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Cost / Paid leads</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.costPerLead"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan total new Tickets sold</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.newTicketsTotal"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan New Tickets Sold - new Organic</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.newTicketsOrganic"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan New Tickets Sold - paid</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.newTicketsPaid"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan total Conversion Rate (%)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.cvrTotal"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Organic Conversion Rate (%)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.cvrOrganic"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Paid Conversion Rate (%)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.cvrPaid"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Total Spend ($)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.adSpend"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Cost / Paid New Tickets (EGP)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.costPerNewTicket"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Total ROAS</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.totalRoas"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Paid ROAS</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.paidRoas"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled Clicks</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.clicks"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled CPC ($)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.cpc"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled CPM ($)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.cpm"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled CTR (%)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.keyMetricsDetail.ctr"></div>
+</div>
+</div>
+<div class="sec-head" data-section="sales"><div><h2>B2C Sales</h2><div class="sub">Aug 1–9, 2026 · weekly target vs actual</div></div></div>
+<div class="grid-4" data-repeat="as.b2cMetrics" id="asB2cMetrics" style="margin-bottom:16px;"></div>
+<div class="sec-head"><div><h2>B2B Pipeline</h2><div class="sub">4 open opportunities, current period</div></div></div>
+<div class="grid-4" style="margin-bottom:16px;">
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan B2B Pipeline (# open)</span><span class="pill blue"></span></div>
+<div class="k-val" data-field="as.b2bPipeline.pipelineOpen"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan B2B Pipeline Value (EGP)</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="as.b2bPipeline.pipelineValue"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan B2B Sales new tickets revenue (EGP)</span><span class="pill green"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="as.b2bPipeline.newTicketsRevenue"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Companies Approached (B2B)</span><span class="pill green"></span></div>
+<div class="k-val" data-field="as.b2bPipeline.companiesApproached"></div>
+<div class="k-sub"></div>
+</div>
+</div>
+<div class="sec-head" data-section="sales"><div><h3 style="font-size:13px;font-weight:800;">Training Programs — Pipeline</h3><div class="sub">Current bookings vs. capacity, by course</div></div></div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Nourhan Training Programs name (Pipeline)</th><th>Nourhan Tickets Closed (Pipeline)</th><th>Nourhan Remaning</th><th>Nourhan Target tickets (Pipeline)</th><th>Nourhan Achievement (%) 4</th><th>Nourhan Under Collection</th></tr></thead>
+<tbody data-repeat="as.trainingPipeline" id="asTrainingPipelineBody"></tbody>
+</table>
+</div>
+<div class="sec-head" data-section="operations"><div><h2>Operations</h2><div class="sub">Training cohorts, delivery activity and account status this period.</div></div></div>
+<div class="sec-head"><div><h3 style="font-size:13px;font-weight:800;">Training Programs — Delivered</h3></div></div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr style="font-size:9.5px;"><th style="padding-left:20px;">Nourhan Training Programs name</th><th>Nourhan Target tickets</th><th>Nourhan Tickets Closed</th><th>Nourhan Target revenue</th><th>Nourhan  Sales revenue</th><th>Nourhan Achievement (%) 3</th></tr></thead>
+<tbody data-repeat="as.trainingDelivered" id="asTrainingDeliveredBody"></tbody>
+</table>
+</div>
+<div class="sec-head" data-section="marketing"><div><h2>Content</h2><div class="sub">Published output and platform performance — current period</div></div></div>
+<div class="grid-4" style="margin-bottom:16px;">
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Articles Published</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.content.articlesPublished"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Carousels Published</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="as.content.carouselsPublished"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Reels Published</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="as.content.reelsPublished"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan AI reels Published</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="as.content.aiReelsPublished"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Emails Sent number of clients</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="as.content.emailsSent"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan bulk whatsapp sent number of clients</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="as.content.whatsappSent"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Total Platform Views</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="as.content.platformViews"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan Total engagment</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="as.content.platformEngagement"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nourhan New Followers</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="as.content.platformNewFollowers"></div>
+</div>
+</div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Platform</th><th>Nourhan Views</th><th>Nourhan engagment</th><th>Nourhan new followers</th></tr></thead>
+<tbody data-repeat="as.platformBreakdown" id="asPlatformBreakdownBody"></tbody>
+</table>
+</div>
+<div class="sec-head" data-section="finance"><div><h2>Finance Snapshot</h2><div class="sub">Cash in / cash out, current period — mirrors Nouran's finance log</div></div></div>
+<div class="grid-4" style="margin-bottom:16px;">
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nouran Cash In (EGP)</span><span class="pill green"></span></div>
+<div class="k-val" data-field="as.cashFlow.cashIn"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nouran Cash In — # Transactions</span><span class="pill blue"></span></div>
+<div class="k-val" data-field="as.cashFlow.cashInTransactions"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nouran Total Cash Out (EGP)</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="as.cashFlow.cashOut"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nouran Net Cash Flow (EGP)</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="as.cashFlow.netCashFlow"></div>
+</div>
+</div>
+</div>
+<!-- ======================================================= -->
+<!-- PAGE 4 — OLIGENCE AGENCY                                  -->
+<!-- ======================================================= -->
+<div class="page" id="page-oligence">
+<div class="dash-subhead">
+<div>
+<h2>Oligence Dashboard</h2>
+</div>
+<div class="dash-subhead-right">
+<span class="pill amber" data-field="oligence.statusLabel"></span>
+<span class="health-score">Health score <b data-field="oligence.healthScore"></b></span>
+</div>
+</div>
+<div class="sec-head" data-section="home" style="margin-top:0;"><div><h2>Executive Home</h2><div class="sub">Oligence at a glance · current period</div></div></div>
+<div class="hero" style="margin-bottom:22px;">
+<div class="hero-top">
+<div>
+<div class="hero-eyebrow"><span class="sq"></span>AGENCY INTELLIGENCE BRIEFING</div>
+<h1>Oligence Business Health</h1>
+<div class="desc"></div>
+</div>
+<div class="hero-score">
+<div class="lbl">Health Score</div>
+<div class="val" data-field="oligence.healthScore"></div>
+</div>
+</div>
+<div class="hero-stats" style="grid-template-columns:repeat(5,1fr);">
+<div class="hero-stat"><div class="k">Basant Total Revenue - Agency (EGP)</div><div class="v" data-field="oligence.hero.totalRevenue"></div></div>
+<div class="hero-stat"><div class="k">Basant Achievement (%)</div><div class="v" data-field="oligence.hero.targetAchievement"></div></div>
+<div class="hero-stat"><div class="k">Basant Total cash in / collected - Agency (EGP)</div><div class="v" data-field="oligence.hero.collected"></div></div>
+<div class="hero-stat"><div class="k">Basant Pending / outstanding (EGP)</div><div class="v" data-field="oligence.hero.outstanding"></div></div>
+<div class="hero-stat"><div class="k">Basant Overdue (EGP)</div><div class="v" data-field="oligence.hero.atRisk"></div></div>
+</div>
+</div>
+<div class="pillar-mini-grid" data-repeat="oligence.pillars" id="oligencePillars"></div>
+<div class="sec-head" data-section="marketing"><div><h2>Marketing Metrics</h2></div></div>
+<div class="grid-4" style="margin-bottom:16px;">
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Basant Total Revenue - Agency (EGP)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="oligence.marketingMetrics.totalRevenue"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Basant Achievement (%)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="oligence.marketingMetrics.achievement"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled Spend (EGP)</span><span class="pill blue"></span></div>
+<div class="k-val" data-field="oligence.marketingMetrics.adSpend"></div>
+</div>
+<div class="card kpi" style="background:#FEF2F2;">
+<div class="k-top"><span class="k-lbl">Pipeline (# open)</span><span class="pill grey"></span></div>
+<div class="k-val"></div>
+</div>
+<div class="card kpi" style="background:#FEF2F2;">
+<div class="k-top"><span class="k-lbl">Pipeline Value (EGP)</span><span class="pill grey"></span></div>
+<div class="k-val"></div>
+</div>
+<div class="card kpi" style="background:#FEF2F2;">
+<div class="k-top"><span class="k-lbl">Companies Approached</span><span class="pill grey"></span></div>
+<div class="k-val"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled Clicks</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="oligence.marketingMetrics.clicks"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled CPC ($)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="oligence.marketingMetrics.cpc"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled CPM ($)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="oligence.marketingMetrics.cpm"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Khaled CTR (%)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="oligence.marketingMetrics.ctr"></div>
+</div>
+</div>
+<div class="sec-head" data-section="marketing"><div><h2>Content</h2><div class="sub">Delivery mix and platform performance — from Rana's content log, current period</div></div></div>
+<div class="grid-4" style="margin-bottom:16px;">
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana Total Outputs</span><span class="pill blue"></span></div>
+<div class="k-val" data-field="oligence.content.totalOutputs"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana ready to publish</span><span class="pill green"></span></div>
+<div class="k-val" data-field="oligence.content.readyToPublish"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana In Progress</span><span class="pill amber"></span></div>
+<div class="k-val" data-field="oligence.content.inProgress"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana Approvals Pending</span><span class="pill amber"></span></div>
+<div class="k-val" data-field="oligence.content.approvalsPending"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana Video &amp; Production</span><span class="pill green"></span></div>
+<div class="k-val" data-field="oligence.content.videoProduction"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana AI Video</span><span class="pill blue"></span></div>
+<div class="k-val" data-field="oligence.content.aiVideo"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana carousels</span><span class="pill blue"></span></div>
+<div class="k-val" data-field="oligence.content.carousels"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana static posts</span><span class="pill blue"></span></div>
+<div class="k-val" data-field="oligence.content.staticPosts"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana Copies Written + Rana shoots</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="oligence.content.copiesShoots"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana On-Time Delivery % + Rana Defect Rate %</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="oligence.content.deliveryDefect"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana Leads ( whatsaap + leads )</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="oligence.content.leads"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana Top Delivered Service</span><span class="pill green"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="oligence.content.topDeliveredService"></div>
+<div class="k-sub"></div>
+</div>
+</div>
+<div class="sec-head"><div><h3 style="font-size:13px;font-weight:800;">Platform Performance</h3><div class="sub">Total across all platforms, plus per‑platform breakdown</div></div></div>
+<div class="grid-3" style="margin-bottom:16px;">
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana Total Platform Views</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="oligence.platformSummary.views"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana Total Platform engagment</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="oligence.platformSummary.engagement"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Rana Total Platform New Followers</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="oligence.platformSummary.newFollowers"></div>
+</div>
+</div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Platform</th><th>Rana Views / Impressions</th><th>Rana Engagment</th><th>Rana New followers</th><th>Rana visits</th></tr></thead>
+<tbody data-repeat="oligence.platformBreakdown" id="oligencePlatformBreakdownBody"></tbody>
+</table>
+</div>
+<div class="sec-head" data-section="finance"><div><h2>Revenue Recognition</h2><div class="sub">Total revenue, what's landed, and what's still pending or overdue — matches Basant's agency log.</div></div></div>
+<div class="grid-5" data-repeat="oligence.revenueMetrics" id="oligenceRevenueMetrics" style="margin-bottom:16px;"></div>
+<div class="sec-head"><div><h2>Cost Base &amp; Subscriptions</h2><div class="sub">Fixed + variable · company‑wide, not yet split by account</div></div></div>
+<div class="grid-4" style="margin-bottom:16px;">
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nouran Cash Out - Salaries Allocated (EGP)</span><span class="pill grey"></span></div>
+<div class="k-val" data-field="oligence.costBase.salaries"></div>
+</div>
+<div class="card kpi" style="background:#FEF2F2;">
+<div class="k-top"><span class="k-lbl">IMFND Ad Spend</span><span class="pill grey"></span></div>
+<div class="k-val"></div>
+</div>
+<div class="card kpi" style="background:#FEFCE8;">
+<div class="k-top"><span class="k-lbl">Khaled Spend (EGP)</span><span class="pill amber"></span></div>
+<div class="k-val" data-field="oligence.marketingMetrics.adSpend"></div>
+</div>
+<div class="card kpi" style="background:#FEF2F2;">
+<div class="k-top"><span class="k-lbl">Fixed Run‑Rate</span><span class="pill grey"></span></div>
+<div class="k-val"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi">
+<div class="k-top"><span class="k-lbl">Nouran number of Cash In Payments ( AS / IMFND) + Nouran Cash In — # Transactions</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="oligence.costBase.cashInPayments"></div>
+<div class="k-sub"></div>
+</div>
+<div class="card kpi" style="background:#FEFCE8;">
+<div class="k-top"><span class="k-lbl">Basant MER - Oligence (blended)</span><span class="pill grey"></span></div>
+<div class="k-val" style="font-size:16px;" data-field="oligence.marketingMetrics.mer"></div>
+</div>
+</div>
+<div class="card" style="padding:0; margin-bottom:16px;">
+<table>
+<thead><tr><th style="padding-left:20px;">Nouran Subscription / Tool</th><th>Nouran Brand(s) Served</th><th>Nouran Monthly Cost (EGP)</th><th>Nouran Billing Cycle</th><th>Nouran renewing date</th><th>Nouran Payment Method</th><th>Nouran Status</th></tr></thead>
+<tbody data-repeat="oligence.subscriptions" id="oligenceSubscriptionsBody"></tbody>
+</table>
+</div>
+<div class="sec-head" data-section="sales"><div><h2>Client Portfolio</h2><div class="sub">7 accounts · sorted by urgency</div></div></div>
+<div class="card" style="padding:0; margin-bottom:20px; overflow-x:auto;">
+<table style="min-width:1020px;">
+<thead><tr><th style="padding-left:20px;">Basant Brand</th><th>Basant services</th><th>Status (derived)</th><th>Basant Top Risk / Escalation</th><th style="text-align:right;">Basant Total Revenue - Agency (EGP)</th><th style="text-align:right;">Basant Total cash in / collected - Agency (EGP)</th><th style="text-align:right;">Basant Pending / outstanding (EGP)</th><th style="text-align:right;">Basant Total Spend - All-in (EGP)</th><th style="text-align:right;padding-right:20px;">Net Cash Flow (computed)</th></tr></thead>
+<tbody data-repeat="oligence.clients" id="oligenceClientsBody"></tbody>
+</table>
+</div>
+<div style="font-size:10.5px; color:var(--muted-2); font-style:italic; margin:-14px 0 20px;">Cash Out and Net Cash Flow aren't split by account yet — see Oligence › Finance › Cost Base for the company‑wide total.</div>
+<div class="sec-head" data-section="operations"><div><h2>Team Scorecards</h2><div class="sub">Delivery capacity, team scorecards, tracking gaps and next-step accounts. Each card = one row from either Basant team member / Basant rank / Basant note, or Rana team member / Rana rank / Rana note (both in the OLIGENCE tab) — the same person can appear twice if rated in both blocks.</div></div></div>
+<div class="grid-3" data-repeat="oligence.teamPulse" id="oligenceTeamPulse" style="margin-bottom:16px;"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

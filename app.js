@@ -45,58 +45,117 @@ function getPath(obj, path){
 }
 function esc(v){ return (v === undefined || v === null) ? '' : v; }
 
+// ---- Percentage display formatting (Stage 2.1, frontend-only) ----
+// Canonical values at these paths are numeric fractions (e.g. 0.9423) per
+// the locked Build Dashboard JSON contract — this set exists only to tell
+// rendering which fields to display as "94.2%" instead of "0.9423". It
+// never touches the canonical data itself. Ratios like ROAS/MER/CPC/CPL
+// are NOT percentages and must never be added here.
+const PERCENTAGE_FIELDS = new Set([
+  'imfnd.marketing.newTicketsConversionRate',
+  'imfnd.marketing.organicConversionRate',
+  'imfnd.marketing.paidConversionRate',
+  'imfnd.marketing.revenueAchievement',
+  'imfnd.marketing.ticketsAchievement',
+  'imfnd.sales.b2b.b2bAchievement',
+  'as.marketing.newTicketsConversionRate',
+  'as.marketing.organicConversionRate',
+  'as.marketing.paidConversionRate',
+  'as.marketing.revenueAchievement',
+  'as.marketing.ticketsAchievement',
+  'as.sales.b2b.b2bAchievement',
+  'oligence.finance.achievement',
+]);
+// Real zero (0) must render "0.0%", not be treated as missing; only
+// undefined/null/'' (already normalized to undefined by getPath) stay —.
+function formatPct(v){
+  return (typeof v === 'number' && Number.isFinite(v)) ? (v * 100).toFixed(1) + '%' : undefined;
+}
+
+// ---- Type A Total Row helpers (Stage 6, frontend-only) ----
+// Totals are computed ONLY from the rows actually rendered in a given
+// table (post status-filter, where applicable) — never from the full
+// canonical array. A column whose visible rows are all blank/non-numeric
+// has no real measurement, so it stays absent (— once rendered), never a
+// fabricated 0; a column with at least one genuine numeric value
+// (including 0) sums only the valid numeric contributions. This mirrors
+// the verified backend sumCol fix (Stage 4.1) at render-row granularity.
+// Canonical arrays/objects are only ever read here, never mutated.
+function numOrNull(v){
+  if (v === undefined || v === null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function sumVisible(rows, field){
+  let total = 0, found = false;
+  for (const r of rows){
+    const n = numOrNull(r[field]);
+    if (n !== null){ found = true; total += n; }
+  }
+  return found ? total : undefined;
+}
+function ratioFromVisible(rows, numField, denField){
+  const num = sumVisible(rows, numField);
+  const den = sumVisible(rows, denField);
+  if (num === undefined || den === undefined || den === 0) return undefined;
+  return num / den;
+}
+// Plain numeric Total cell (no % formatting) — used for additive sums
+// and ratio totals like MER that are displayed as a raw number.
+function totalCell(value){
+  return value === undefined ? '—' : String(value);
+}
+// Appends a Total <tr> to a tbody, but ONLY when the table actually has
+// rows — an empty/no-data table keeps its existing empty-state behavior
+// (renderRows' single blank row) rather than gaining a fake Total row.
+function appendTotalRow(containerId, rows, trHtml){
+  if (!rows.length) return;
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.insertAdjacentHTML('beforeend', trHtml);
+}
+// Renders a Type A array as-is (every row, unfiltered/undeduped) plus a
+// Total row built from those same rows.
+function renderWithTotal(containerId, arr, rowFn, totalRowHtmlFn){
+  const rows = Array.isArray(arr) ? arr : [];
+  renderRows(containerId, rows, rowFn);
+  appendTotalRow(containerId, rows, totalRowHtmlFn(rows));
+}
+
 function applyData(data){
   if(!data || typeof data !== 'object') data = {};
 
   document.querySelectorAll('[data-field]').forEach(el => {
-    const val = getPath(data, el.getAttribute('data-field'));
-    el.innerHTML = (val !== undefined) ? val : '';
+    const path = el.getAttribute('data-field');
+    let val = getPath(data, path);
+    if(PERCENTAGE_FIELDS.has(path)) val = formatPct(val);
+    if(el.classList.contains('k-val')){
+      const isEmpty = (val === undefined);
+      const valStr = isEmpty ? '' : String(val);
+      el.classList.toggle('k-val--empty', isEmpty);
+      el.classList.toggle('k-val--long', !isEmpty && valStr.length > 10);
+      el.innerHTML = isEmpty ? '—' : valStr;
+    } else {
+      // Status/decorative pills (e.g. statusLabel chips) intentionally stay
+      // blank when unset — a colored badge showing "—" reads as broken, not
+      // "no data". Every other non-.k-val binding (hero-stat "v" spans,
+      // table "num" cells, inline health-score "b" tags, etc.) is a genuine
+      // mapped value output and follows the same "—" no-data rule as .k-val.
+      const isPill = el.classList.contains('pill');
+      el.innerHTML = (val !== undefined) ? val : (isPill ? '' : '—');
+    }
   });
 
-  // Each brand's main (non program-specific) achievement columns. The
-  // webhook doesn't expose per-metric achievement values on group.brands
-  // yet (only one pre-formatted keyMetric string) — labels render now so
-  // the source is clear; values stay blank until n8n_build_response.js is
-  // updated to send them.
-  const BRAND_ACHIEVEMENT_LABELS = {
-    IMFND: ['Fatma Achievement (%) 1', 'Fatma Achievement (%) 2 - Tickets'],
-    AS: ['Nourhan Achievement (%) B2C', 'Nourhan Achievement (%) B2B'],
-    Oligence: ['Basant Achievement (%)'],
-  };
-  renderRows('groupBrandsBody', getPath(data,'group.brands'), b => {
-    const labels = BRAND_ACHIEVEMENT_LABELS[b.name];
-    const cell = labels
-      ? labels.map(l => `<div>${esc(l)}: <span style="color:var(--muted-2);">—</span></div>`).join('')
-      : esc(b.keyMetric);
-    return `
+  // Group Brand Health — canonical scalar source (Group Stage C).
+  // group.brands[].keyMetric is n8n's pre-formatted Achievement display
+  // string (built from each company's own canonical Achievement metrics)
+  // — the frontend renders it uniformly for every brand and performs no
+  // Achievement calculation or per-metric breakdown of its own.
+  renderRows('groupBrandsBody', getPath(data,'group.brands'), b => `
     <tr>
       <td class="name" style="padding-left:20px;">${esc(b.name)}</td>
-      <td class="muted-cell">${cell}</td>
-    </tr>`;
-  });
-
-  renderRows('groupSignalsBody', getPath(data,'group.aiSignals'), s => `
-    <tr>
-      <td style="padding-left:20px;"><span class="pill ${esc(s.typeColor||'grey')}">${esc(s.typeLabel)}</span></td>
-      <td class="muted-cell">${esc(s.severity)}</td>
-      <td class="name">${esc(s.item)}</td>
-      <td class="muted-cell">${esc(s.detail)}</td>
-      <td class="muted-cell">${esc(s.source)}</td>
+      <td class="muted-cell">${esc(b.keyMetric)}</td>
     </tr>`);
-
-  renderRows('groupAlertsBody', getPath(data,'group.cashflowAlerts'), a => `
-    <tr>
-      <td style="padding-left:20px;"><span class="pill ${esc(a.levelColor||'grey')}">${esc(a.levelLabel)}</span></td>
-      <td class="muted-cell">${esc(a.source)}</td>
-      <td class="name">${esc(a.issue)}</td>
-      <td class="muted-cell">${esc(a.detail)}</td>
-      <td class="num">${esc(a.balance)}</td>
-    </tr>`);
-
-  ['scale','fix','stop','automate','escalate'].forEach(k => {
-    renderRows('groupDec' + k.charAt(0).toUpperCase() + k.slice(1), getPath(data,'group.decisions.' + k),
-      item => `<li><b>${esc(item.title)}</b>${esc(item.detail)}</li>`);
-  });
 
   const projectsRowFn = p => `
     <tr><td class="muted-cell" style="padding-left:20px;">${esc(p.brand)}</td><td class="name">${esc(p.task)}</td><td class="num">${esc(p.deadline)}</td><td class="muted-cell">${esc(p.status)}</td><td class="muted-cell">${esc(p.notes)}</td></tr>`;
@@ -105,24 +164,32 @@ function applyData(data){
   renderRows('asProjectsBody', getPath(data,'as.projects'), projectsRowFn);
   renderRows('oligenceProjectsBody', getPath(data,'oligence.projects'), projectsRowFn);
 
-  const teamCardFn = t => {
-    const score = Number(t.score) || 0;
-    const off = (163.4 * (1 - Math.max(0, Math.min(100, score)) / 100)).toFixed(1);
-    const color = t.ringColor || (score >= 75 ? '#059669' : score >= 55 ? '#D97706' : '#DC2626');
-    return `
-    <div class="team-card">
-      <div class="ring-wrap"><svg width="62" height="62"><circle cx="31" cy="31" r="26" fill="none" stroke="#EEF0F3" stroke-width="6"/><circle cx="31" cy="31" r="26" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round" stroke-dasharray="163.4" stroke-dashoffset="${off}"/></svg><div class="ring-score">${esc(t.score)}</div></div>
-      <div class="team-info"><div class="name">${esc(t.name)}</div><div class="role">${esc(t.role)}</div><div class="gap">${esc(t.gap)}</div>
-        <div style="font-size:9.5px;color:var(--muted-2);margin-top:4px;">Source: Basant team member / rank / note OR Rana team member / rank / note (OLIGENCE tab)</div>
-      </div>
-    </div>`;
-  };
-  // Both sections read the SAME field — n8n only ever builds "group.teamPulse";
-  // "oligence.teamPulse" has never existed in the webhook shape, so the
-  // Oligence page's team cards always fell back to 3 empty placeholders
-  // instead of showing the real 4 (or however many) team members.
-  renderRows('groupTeamPulse', getPath(data,'group.teamPulse'), teamCardFn);
-  renderRows('oligenceTeamPulse', getPath(data,'group.teamPulse'), teamCardFn);
+  // Reusable Team Scorecards card: renders one { name, role, score, gap,
+  // ringColor?, source? } item as a ring-score card. The source citation
+  // line only ever renders from the item's own `source` field — no
+  // hardcoded fallback text, so a card with no source from the webhook
+  // simply omits the line.
+  function teamCardFn(){
+    return t => {
+      const score = Number(t.score) || 0;
+      const off = (163.4 * (1 - Math.max(0, Math.min(100, score)) / 100)).toFixed(1);
+      const color = t.ringColor || (score >= 75 ? '#059669' : score >= 55 ? '#D97706' : '#DC2626');
+      return `
+      <div class="team-card">
+        <div class="ring-wrap"><svg width="62" height="62"><circle cx="31" cy="31" r="26" fill="none" stroke="#EEF0F3" stroke-width="6"/><circle cx="31" cy="31" r="26" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round" stroke-dasharray="163.4" stroke-dashoffset="${off}"/></svg><div class="ring-score">${esc(t.score)}</div></div>
+        <div class="team-info"><div class="name">${esc(t.name)}</div><div class="role">${esc(t.role)}</div><div class="gap">${esc(t.gap)}</div>
+          ${t.source ? `<div style="font-size:9.5px;color:var(--muted-2);margin-top:4px;">${esc(t.source)}</div>` : ''}
+        </div>
+      </div>`;
+    };
+  }
+  // Group's Team Pulse and Oligence's own Team Scorecards are two distinct
+  // sources (Oligence Stage D): Group reads the group-wide rollup, Oligence
+  // reads its own canonical oligence.teamPulse.
+  renderRows('groupTeamPulse', getPath(data,'group.teamPulse'), teamCardFn());
+  renderRows('oligenceTeamPulse', getPath(data,'oligence.teamPulse'), teamCardFn());
+  renderRows('imfndTeamScorecards', getPath(data,'imfnd.teamPulse'), teamCardFn());
+  renderRows('asTeamScorecards', getPath(data,'as.teamPulse'), teamCardFn());
 
   const pillarSections = ['marketing','sales','finance','operations','projects'];
   const pillarNames = ['Marketing','Sales','Finance','Operations','Projects'];
@@ -133,25 +200,25 @@ function applyData(data){
   // that combination reads as a formula and isn't one.
   const PILLAR_SOURCE_COLUMNS = {
     imfnd: [
-      { val: 'Fatma Total ROAS', sub: 'Fatma Total Spend ($)' },
-      { val: 'Fatma New Tickets Sold / Fatma New Tickets Target', sub: 'Fatma total Conversion Rate (%)' },
-      { val: 'Nouran Net Cash Flow (EGP)', sub: 'Nouran MER' },
-      { val: 'Fatma Organic New Tickets + Fatma Paid New Tickets', sub: '' },
-      { val: 'Fatma Top Program', sub: 'Fatma Top Program Revenue (EGP)' },
+      { val: 'Total ROAS', sub: 'Total Spend ($)' },
+      { val: 'New Tickets Sold / New Tickets Target', sub: 'total Conversion Rate (%)' },
+      { val: 'Net Cash Flow (EGP)', sub: 'MER' },
+      { val: 'Organic New Tickets + Paid New Tickets', sub: '' },
+      { val: 'Top Program', sub: 'Top Program Revenue (EGP)' },
     ],
     as: [
-      { val: 'Nourhan Total ROAS', sub: 'Nourhan Total Spend ($)' },
-      { val: 'Nourhan total new Tickets sold', sub: 'Nourhan New Tickets Sold - new Organic + Nourhan New Tickets Sold - paid' },
-      { val: 'Nouran Net Cash Flow (EGP)', sub: 'Nouran MER' },
-      { val: 'Nourhan Total Platform Views', sub: 'Nourhan Total engagment' },
-      { val: 'Nourhan B2B Pipeline (# open)', sub: '' },
+      { val: 'Total ROAS', sub: 'Total Spend ($)' },
+      { val: 'total new Tickets sold', sub: 'New Tickets Sold - new Organic + New Tickets Sold - paid' },
+      { val: 'Net Cash Flow (EGP)', sub: 'MER' },
+      { val: 'Total Platform Views', sub: 'Total engagment' },
+      { val: 'B2B Pipeline (# open)', sub: '' },
     ],
     oligence: [
-      { val: 'Basant MER - Oligence (blended)', sub: '' },
-      { val: 'Basant Pipeline - Contracting (#) + Basant Pipeline - Retainer (#)', sub: 'Basant Pipeline - Potential (#) + Basant Pipeline - Quotation (#)' },
-      { val: 'Nouran Net Cash Flow (EGP)', sub: 'Basant Overdue (EGP)' },
-      { val: 'Rana Total Outputs', sub: 'Rana On-Time Delivery %' },
-      { val: 'Basant Top Risk / Escalation', sub: '' },
+      { val: 'MER - Oligence (blended)', sub: '' },
+      { val: 'Pipeline - Contracting (#) + Pipeline - Retainer (#)', sub: 'Pipeline - Potential (#) + Pipeline - Quotation (#)' },
+      { val: 'Net Cash Flow (EGP)', sub: 'Overdue (EGP)' },
+      { val: 'Total Outputs', sub: 'On-Time Delivery %' },
+      { val: 'Top Risk / Escalation', sub: '' },
     ],
   };
   ['imfnd','as','oligence'].forEach(page => {
@@ -162,24 +229,22 @@ function applyData(data){
     el.innerHTML = pillarSections.map((section, i) => {
       const p = (Array.isArray(arr) && arr[i]) ? arr[i] : {};
       const src = sourceCols ? sourceCols[i] : null;
+      // IMFND, AS, and Oligence (Oligence Stage B) have all migrated to the
+      // canonical pillar field names — every page now reads the same shape.
+      const usesCanonicalPillarFields = (page === 'imfnd' || page === 'as' || page === 'oligence');
+      const pVal = usesCanonicalPillarFields ? p.primaryValue : p.value;
+      const pSub = usesCanonicalPillarFields ? p.subValue : p.sub;
+      const pSectionTarget = usesCanonicalPillarFields ? (p.sectionLink || section) : (p.section || section);
       return `
-      <div class="pillar-mini" onclick="setSection('${page}','${esc(p.section || section)}')">
+      <div class="pillar-mini" onclick="setSection('${page}','${esc(pSectionTarget)}')">
         <div class="pm-top"><span class="pm-name">${esc(p.name || pillarNames[i])}</span><span class="pill ${esc(p.statusColor||'grey')}">${esc(p.statusLabel)}</span></div>
-        ${src && src.val ? `<div class="pm-source" style="font-size:10px;color:var(--muted-2);margin-top:2px;">${esc(src.val)}</div>` : ''}
-        <div class="pm-val"${p.valSize?` style="font-size:${p.valSize};"`:''}>${esc(p.value)}</div>
-        ${src && src.sub ? `<div class="pm-source" style="font-size:10px;color:var(--muted-2);">${esc(src.sub)}</div>` : ''}
-        <div class="pm-sub">${esc(p.sub)}</div>
+        ${src && src.val ? `<div class="pm-source">${esc(src.val)}</div>` : ''}
+        <div class="pm-val"${p.valSize?` style="font-size:${p.valSize};"`:''}>${esc(pVal)}</div>
+        ${src && src.sub ? `<div class="pm-source">${esc(src.sub)}</div>` : ''}
+        <div class="pm-sub">${esc(pSub)}</div>
       </div>`;
     }).join('');
   });
-
-  const barRowFn = b => {
-    const hasData = b && b.name !== undefined;
-    const lbl = hasData ? esc(b.name) : 'Fatma Top Program';
-    const val = hasData ? esc(b.value) : '<span style="color:var(--muted-2);font-weight:400;">Fatma Top Program Revenue (EGP)</span>';
-    return `<div class="bar-row"><div class="lbl">${lbl}</div><div class="bar-track"><div class="bar-fill" style="width:${hasData && b.pct !== undefined ? esc(b.pct) : 0}%;background:var(--green-line);"></div></div><div class="val">${val}</div></div>`;
-  };
-  renderRows('imfndRoasByProgram', getPath(data,'imfnd.roasByProgram'), barRowFn);
 
   // Fixed-stage bar list (Lead Funnel): like renderFixedMetricGrid, but for
   // bar-rows — one bar per label, in that fixed order, matched by item.name.
@@ -195,62 +260,345 @@ function applyData(data){
       return `<div class="bar-row"><div class="lbl">${esc(label)}${watchTag}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--green-line);"></div></div><div class="val">${val}</div></div>`;
     }).join('');
   }
-  const imfndLeadFunnelLabels = ['Fatma Total Leads','Fatma in pipline leads','Fatma not reached leads','Fatma undercollection Leads','Fatma New Tickets Sold','Fatma Lost leads'];
-  renderFixedBarList('imfndLeadFunnel', getPath(data,'imfnd.leadFunnel'), imfndLeadFunnelLabels, new Set(['Fatma undercollection Leads','Fatma Lost leads']));
-
-  const imfndTrainingPipelineRowFn = r => `
-    <tr><td class="name" style="padding-left:20px;">${esc(r.program)}</td><td class="num">${esc(r.ticketsClosed)}</td><td class="num">${esc(r.remaining)}</td><td class="num">${esc(r.targetTickets)}</td><td class="num">${esc(r.achievement)}</td><td class="num">${esc(r.underCollection)}</td></tr>`;
-  renderRows('imfndTrainingPipelineBody', getPath(data,'imfnd.trainingPipeline'), imfndTrainingPipelineRowFn);
-
-  const imfndTrainingDeliveredRowFn = r => `
-    <tr><td class="name" style="padding-left:20px;">${esc(r.program)}</td><td class="num">${esc(r.targetTickets)}</td><td class="num">${esc(r.ticketsClosed)}</td><td class="num">${esc(r.targetRevenue)}</td><td class="num">${esc(r.salesRevenue)}</td><td class="num">${esc(r.achievement)}</td></tr>`;
-  renderRows('imfndTrainingDeliveredBody', getPath(data,'imfnd.trainingDelivered'), imfndTrainingDeliveredRowFn);
+  // Lead Status Breakdown (Marketing + Sales tabs, per brand): single-row
+  // table + funnel, each brand reusing its own leadFunnel data source.
+  const imfndLeadStatusLabels = ['undercollection Leads','in pipeline follow up leads','not reached leads','Lost leads'];
+  function renderLeadStatusTable(containerId, dataPath){
+    const el = document.getElementById(containerId);
+    if(!el) return;
+    const list = getPath(data,dataPath);
+    const arr = Array.isArray(list) ? list : [];
+    const cells = imfndLeadStatusLabels.map((label, i) => {
+      const match = arr.find(x => x && typeof x.name === 'string' && x.name.trim().toLowerCase() === label.toLowerCase());
+      const val = match ? esc(match.value) : '';
+      return `<td class="num"${i===0?' style="padding-left:20px;"':''}>${val}</td>`;
+    }).join('');
+    el.innerHTML = `<tr>${cells}</tr>`;
+  }
+  // IMFND Lead Status — canonical scalar sources (Stage C2). The TABLE shows
+  // 5 raw fields (the 4 leadStatusBreakdown stages + newTicketsSold, in that
+  // fixed order); the FUNNEL shows a fixed 4-stage business funnel (the same
+  // minus Lost Leads) — order is NEVER derived from the values. Bar width is
+  // presentation-only (scaled against the largest of the 4 stage values,
+  // matching AS's funnel width rule) and is never displayed as a number or
+  // stored/sent anywhere. (AS now has its own
+  // separate canonical Lead Status functions below, added in AS Stage C2 —
+  // renderFixedBarList/renderLeadStatusTable/imfndLeadStatusLabels just
+  // below are no longer called by either brand; left in place, not removed,
+  // per this migration's dead-code reporting policy.)
+  const imfndLeadFunnelStages = [
+    { label: 'Undercollection Leads', value: getPath(data,'imfnd.marketing.leadStatusBreakdown.undercollectionLeads') },
+    { label: 'In Pipeline Follow Up Leads', value: getPath(data,'imfnd.marketing.leadStatusBreakdown.inPipelineFollowUpLeads') },
+    { label: 'Not Reached Leads', value: getPath(data,'imfnd.marketing.leadStatusBreakdown.notReachedLeads') },
+    { label: 'New Tickets Sold (Total)', value: getPath(data,'imfnd.marketing.newTicketsSold') },
+  ];
+  const imfndLeadStatusLostLeads = getPath(data,'imfnd.marketing.leadStatusBreakdown.lostLeads');
+  function renderImfndLeadStatusTable(containerId){
+    const el = document.getElementById(containerId);
+    if(!el) return;
+    const rowValues = [...imfndLeadFunnelStages.map(s => s.value), imfndLeadStatusLostLeads];
+    const cells = rowValues.map((v, i) => `<td class="num"${i===0?' style="padding-left:20px;"':''}>${esc(v)}</td>`).join('');
+    el.innerHTML = `<tr>${cells}</tr>`;
+  }
+  function renderImfndLeadFunnel(containerId){
+    const el = document.getElementById(containerId);
+    if(!el) return;
+    const numericValues = imfndLeadFunnelStages.map(s => Number(s.value)).filter(n => Number.isFinite(n));
+    const max = numericValues.length ? Math.max(...numericValues) : 0;
+    const hasMax = Number.isFinite(max) && max > 0;
+    el.innerHTML = imfndLeadFunnelStages.map(s => {
+      const n = Number(s.value);
+      const width = (hasMax && Number.isFinite(n)) ? Math.max(0, Math.min(100, (n / max) * 100)) : 100;
+      return `
+      <div class="imfnd-funnel-stage">
+        <div class="imfnd-funnel-label">${esc(s.label)}</div>
+        <div class="imfnd-funnel-value">${esc(s.value)}</div>
+        <div class="imfnd-funnel-bar-wrap"><div class="imfnd-funnel-bar" style="width:${width}%;"></div></div>
+      </div>`;
+    }).join('');
+  }
+  renderImfndLeadStatusTable('imfndLeadStatusTableBody');
+  renderImfndLeadFunnel('imfndLeadStatusFunnel');
+  renderImfndLeadStatusTable('imfndLeadStatusTableBodySales');
+  renderImfndLeadFunnel('imfndLeadStatusFunnelSales');
+  // AS Lead Status — canonical scalar sources (AS Stage C2), mirroring the
+  // IMFND Stage C2 pattern with dedicated AS-only functions (not shared with
+  // IMFND or the old renderFixedBarList/renderLeadStatusTable, which AS no
+  // longer uses). TABLE = 5 fixed fields (4 leadStatusBreakdown stages +
+  // newTicketsSold); FUNNEL = fixed 4-stage business funnel (same minus Lost
+  // Leads) — order is NEVER derived from the values. NOTE: AS's width rule
+  // intentionally differs from IMFND's — AS scales against the MAX of the 4
+  // funnel values (not the Undercollection/first-stage value IMFND uses);
+  // this was the AS Stage C2 spec and IMFND's own denominator was left
+  // unchanged, per instructions (see AS_STAGE_C2_REPORT.md Section 9).
+  const asLeadFunnelStages = [
+    { label: 'Undercollection Leads', value: getPath(data,'as.marketing.leadStatusBreakdown.undercollectionLeads') },
+    { label: 'In Pipeline Follow Up Leads', value: getPath(data,'as.marketing.leadStatusBreakdown.inPipelineFollowUpLeads') },
+    { label: 'Not Reached Leads', value: getPath(data,'as.marketing.leadStatusBreakdown.notReachedLeads') },
+    { label: 'New Tickets Sold (Total)', value: getPath(data,'as.marketing.newTicketsSold') },
+  ];
+  const asLeadStatusLostLeads = getPath(data,'as.marketing.leadStatusBreakdown.lostLeads');
+  function renderAsLeadStatusTable(containerId){
+    const el = document.getElementById(containerId);
+    if(!el) return;
+    const rowValues = [...asLeadFunnelStages.map(s => s.value), asLeadStatusLostLeads];
+    const cells = rowValues.map((v, i) => `<td class="num"${i===0?' style="padding-left:20px;"':''}>${esc(v)}</td>`).join('');
+    el.innerHTML = `<tr>${cells}</tr>`;
+  }
+  function renderAsLeadFunnel(containerId){
+    const el = document.getElementById(containerId);
+    if(!el) return;
+    const numericValues = asLeadFunnelStages.map(s => Number(s.value)).filter(n => Number.isFinite(n));
+    const max = numericValues.length ? Math.max(...numericValues) : 0;
+    const hasMax = Number.isFinite(max) && max > 0;
+    el.innerHTML = asLeadFunnelStages.map(s => {
+      const n = Number(s.value);
+      const width = (hasMax && Number.isFinite(n)) ? Math.max(0, Math.min(100, (n / max) * 100)) : 100;
+      return `
+      <div class="as-funnel-stage">
+        <div class="as-funnel-label">${esc(s.label)}</div>
+        <div class="as-funnel-value">${esc(s.value)}</div>
+        <div class="as-funnel-bar-wrap"><div class="as-funnel-bar" style="width:${width}%;"></div></div>
+      </div>`;
+    }).join('');
+  }
+  renderAsLeadStatusTable('asLeadStatusTableBody');
+  renderAsLeadFunnel('asLeadStatusFunnel');
+  renderAsLeadStatusTable('asLeadStatusTableBodySales');
+  renderAsLeadFunnel('asLeadStatusFunnelSales');
 
   const platformBreakdownRowFn = r => `
     <tr><td class="name" style="padding-left:20px;">${esc(r.platform)}</td><td class="num">${esc(r.views)}</td><td class="num">${esc(r.engagement)}</td><td class="num">${esc(r.newFollowers)}</td></tr>`;
-  renderRows('imfndPlatformBreakdownBody', getPath(data,'imfnd.platformBreakdown'), platformBreakdownRowFn);
-  renderRows('asTrainingPipelineBody', getPath(data,'as.trainingPipeline'), imfndTrainingPipelineRowFn);
-  renderRows('asTrainingDeliveredBody', getPath(data,'as.trainingDelivered'), imfndTrainingDeliveredRowFn);
-  renderRows('asPlatformBreakdownBody', getPath(data,'as.platformBreakdown'), platformBreakdownRowFn);
+  renderRows('imfndPlatformBreakdownBody', getPath(data,'imfnd.marketing.platformBreakdown'), platformBreakdownRowFn);
+  renderRows('asPlatformBreakdownBody', getPath(data,'as.marketing.platformBreakdown'), platformBreakdownRowFn);
+
+  // Training Programs Summary (Sales + Operations tabs, per brand): each
+  // brand's two table instances share the same underlying data source.
+  // Both IMFND (Stage A) and AS (AS Stage A) now read the canonical `name`
+  // field from their own canonical array path.
+  const trainingProgramsSummaryRowFn = r => `
+    <tr><td class="name" style="padding-left:20px;">${esc(r.name)}</td><td class="muted-cell">${esc(r.status)}</td><td class="num">${esc(r.targetTickets)}</td><td class="num">${esc(r.ticketsClosed)}</td><td class="num">${esc(r.targetRevenue)}</td><td class="num">${esc(r.salesRevenue)}</td><td class="num">${esc(r.achievement)}</td><td class="muted-cell">${esc(r.plannedStartDate)}</td><td class="muted-cell">${esc(r.actualStartDate)}</td><td class="muted-cell">${esc(r.plannedEndDate)}</td><td class="muted-cell">${esc(r.actualEndDate)}</td><td class="muted-cell">${esc(r.notes)}</td></tr>`;
+  function trainingProgramsTotalRowHtml(rows){
+    const achievement = ratioFromVisible(rows, 'salesRevenue', 'targetRevenue');
+    const achievementDisplay = achievement === undefined ? '—' : formatPct(achievement);
+    return `<tr class="total-row"><td class="name" style="padding-left:20px;">Total</td><td class="muted-cell"></td><td class="num">${totalCell(sumVisible(rows,'targetTickets'))}</td><td class="num">${totalCell(sumVisible(rows,'ticketsClosed'))}</td><td class="num">${totalCell(sumVisible(rows,'targetRevenue'))}</td><td class="num">${totalCell(sumVisible(rows,'salesRevenue'))}</td><td class="num">${achievementDisplay}</td><td class="muted-cell"></td><td class="muted-cell"></td><td class="muted-cell"></td><td class="muted-cell"></td><td class="muted-cell"></td></tr>`;
+  }
+  // USER-APPROVED status split (contract: Sales UI shows status=New only;
+  // Operations UI shows status=Delivered OR Running only). The canonical
+  // array itself (imfnd/as.sales.trainingPrograms) stays unfiltered — this
+  // filtering is purely a render-time choice of which rows to display in
+  // each of the two table instances, and each table's Total is computed
+  // from ONLY the rows that table displays (never from the full array).
+  function normTrainingStatus(s){ return String(s == null ? '' : s).trim().toLowerCase(); }
+  function isSalesTrainingRow(r){ return normTrainingStatus(r.status) === 'new'; }
+  function isOpsTrainingRow(r){ const s = normTrainingStatus(r.status); return s === 'delivered' || s === 'running'; }
+  function renderTrainingProgramsTable(containerId, allPrograms, filterFn){
+    const rows = (Array.isArray(allPrograms) ? allPrograms : []).filter(filterFn);
+    renderRows(containerId, rows, trainingProgramsSummaryRowFn);
+    appendTotalRow(containerId, rows, trainingProgramsTotalRowHtml(rows));
+  }
+  renderTrainingProgramsTable('imfndTrainingProgramsSummaryBodySales', getPath(data,'imfnd.sales.trainingPrograms'), isSalesTrainingRow);
+  renderTrainingProgramsTable('imfndTrainingProgramsSummaryBodyOps', getPath(data,'imfnd.sales.trainingPrograms'), isOpsTrainingRow);
+  renderTrainingProgramsTable('asTrainingProgramsSummaryBodySales', getPath(data,'as.sales.trainingPrograms'), isSalesTrainingRow);
+  renderTrainingProgramsTable('asTrainingProgramsSummaryBodyOps', getPath(data,'as.sales.trainingPrograms'), isOpsTrainingRow);
 
   const oligencePlatformRowFn = r => `
     <tr><td class="name" style="padding-left:20px;">${esc(r.platform)}</td><td class="num">${esc(r.viewsImpressions)}</td><td class="num">${esc(r.engagement)}</td><td class="num">${esc(r.newFollowers)}</td><td class="num">${esc(r.visits)}</td></tr>`;
-  renderRows('oligencePlatformBreakdownBody', getPath(data,'oligence.platformBreakdown'), oligencePlatformRowFn);
+  renderRows('oligencePlatformBreakdownBody', getPath(data,'oligence.marketing.platformBreakdown'), oligencePlatformRowFn);
+
+  const contentDeliveryByClientRowFn = r => `
+    <tr><td class="name" style="padding-left:20px;">${esc(r.brand)}</td><td class="num">${esc(r.totalOutputs)}</td><td class="num">${esc(r.published)}</td><td class="num">${esc(r.readyToPublish)}</td><td class="num">${esc(r.inProgress)}</td><td class="num">${esc(r.approvalsPending)}</td><td class="num">${esc(r.videoProduction)}</td><td class="num">${esc(r.aiVideo)}</td><td class="num">${esc(r.carousels)}</td><td class="num">${esc(r.staticPosts)}</td><td class="num">${esc(r.copiesWritten)}</td><td class="num">${esc(r.shoots)}</td><td class="num">${esc(r.onTimeDelivery)}</td><td class="num">${esc(r.defectRate)}</td><td class="num">${esc(r.fulfillmentTimeAverage)}</td></tr>`;
+  renderRows('oligenceContentDeliveryByClientBody', getPath(data,'oligence.marketing.contentDeliveryByClient'), contentDeliveryByClientRowFn);
+
+  // Stage 7 (Part 3): oligence.content.byBrand[] — Type B array, one
+  // aggregate row per Brand (grouped/summed upstream). No Total row
+  // (Type B arrays don't get one, per the established Stage 6 rule).
+  // Mirrors contentDeliveryByClientRowFn's column order minus the 3
+  // deferred ratio columns, which this array does not carry.
+  const contentByBrandRowFn = r => `
+    <tr><td class="name" style="padding-left:20px;">${esc(r.brand)}</td><td class="num">${esc(r.totalOutputs)}</td><td class="num">${esc(r.published)}</td><td class="num">${esc(r.readyToPublish)}</td><td class="num">${esc(r.inProgress)}</td><td class="num">${esc(r.approvalsPending)}</td><td class="num">${esc(r.videoProduction)}</td><td class="num">${esc(r.aiVideo)}</td><td class="num">${esc(r.carousels)}</td><td class="num">${esc(r.staticPosts)}</td><td class="num">${esc(r.copiesWritten)}</td><td class="num">${esc(r.shoots)}</td></tr>`;
+  renderRows('oligenceContentByBrandBody', getPath(data,'oligence.content.byBrand'), contentByBrandRowFn);
 
   const subscriptionsRowFn = s => `
-    <tr><td class="name" style="padding-left:20px;">${esc(s.tool)}</td><td class="muted-cell">${esc(s.brands)}</td><td class="num">${esc(s.monthlyCost)}</td><td class="muted-cell">${esc(s.billingCycle)}</td><td class="muted-cell">${esc(s.renewingDate)}</td><td class="muted-cell">${esc(s.paymentMethod)}</td><td class="muted-cell">${esc(s.status)}</td><td class="muted-cell">${esc(s.notes)}</td></tr>`;
-  renderRows('oligenceSubscriptionsBody', getPath(data,'oligence.subscriptions'), subscriptionsRowFn);
-  renderRows('imfndSubscriptionsBody', getPath(data,'imfnd.subscriptions'), subscriptionsRowFn);
-  renderRows('asSubscriptionsBody', getPath(data,'as.subscriptions'), subscriptionsRowFn);
+    <tr><td class="name" style="padding-left:20px;">${esc(s.brands)}</td><td class="muted-cell">${esc(s.tool)}</td><td class="num">${esc(s.monthlyCost)}</td><td class="muted-cell">${esc(s.billingCycle)}</td><td class="muted-cell">${esc(s.renewingDate)}</td><td class="muted-cell">${esc(s.paymentMethod)}</td><td class="muted-cell">${esc(s.status)}</td><td class="muted-cell">${esc(s.notes)}</td></tr>`;
+  function subscriptionsTotalRowHtml(rows){
+    return `<tr class="total-row"><td class="name" style="padding-left:20px;">Total</td><td class="muted-cell"></td><td class="num">${totalCell(sumVisible(rows,'monthlyCost'))}</td><td class="muted-cell"></td><td class="muted-cell"></td><td class="muted-cell"></td><td class="muted-cell"></td><td class="muted-cell"></td></tr>`;
+  }
+  renderWithTotal('oligenceSubscriptionsBody', getPath(data,'oligence.finance.subscriptions'), subscriptionsRowFn, subscriptionsTotalRowHtml);
+  renderWithTotal('imfndSubscriptionsBody', getPath(data,'imfnd.finance.subscriptions'), subscriptionsRowFn, subscriptionsTotalRowHtml);
+  renderWithTotal('asSubscriptionsBody', getPath(data,'as.finance.subscriptions'), subscriptionsRowFn, subscriptionsTotalRowHtml);
+
+  // Group page: Cash Flow by Brand — canonical scalar source (Group Stage
+  // A). group.cashFlowByBrand[] is built by n8n directly from the shared
+  // "Nouran Cashflow" tab (same tab each company's own finance.cashFlow is
+  // filtered from) — the frontend no longer joins the three companies' own
+  // objects to construct this table.
+  renderRows('groupCashFlowByBrandBody', getPath(data,'group.cashFlowByBrand'), r => `
+    <tr><td class="name" style="padding-left:20px;">${esc(r.brand)}</td><td class="num">${esc(r.cashInTransactions)}</td><td class="num">${esc(r.cashIn)}</td><td class="num">${esc(r.cashOut)}</td><td class="num">${esc(r.netCashFlow)}</td></tr>`);
+
+  // Group page: Cost Base & Subscriptions — canonical scalar source (Group
+  // Stage B). group.subscriptions[] is built by n8n directly from the
+  // shared "Nouran Subscriptions" tab (same tab each company's own
+  // finance.subscriptions[] is filtered from) — the frontend no longer
+  // joins the three companies' own arrays to construct this table.
+  // subscriptionsRowFn's fields already match group.subscriptions[]'s
+  // canonical shape exactly, so it's reused unmodified. renderRows' default
+  // empty-state (one blank row via Array(1).fill({}), since this <tbody>
+  // has no grid-N class) reproduces the previous [{}] fallback exactly.
+  renderWithTotal('groupSubscriptionsCombinedBody', getPath(data,'group.subscriptions'), subscriptionsRowFn, subscriptionsTotalRowHtml);
 
   // Labels with no matching column anywhere in the Google Sheet (verified
   // against each tab's own documentation row) — flagged red so they're
   // never mistaken for a card that's just waiting on live data.
   const NO_SOURCE_LABELS = new Set([]);
-  const kpiGridFn = k => `
+  const kpiGridFn = k => {
+    const rawVal = esc(k.value);
+    const isEmpty = rawVal === '';
+    const valStr = String(rawVal);
+    const valClass = ['k-val', isEmpty ? 'k-val--empty' : '', (!isEmpty && valStr.length > 10) ? 'k-val--long' : ''].filter(Boolean).join(' ');
+    return `
     <div class="card kpi"${NO_SOURCE_LABELS.has(k.label) ? ' style="background:#FEF2F2;"' : ''}>
       <div class="k-top"><span class="k-lbl">${esc(k.label)}</span><span class="pill ${esc(k.pillColor||'grey')}">${esc(k.pillLabel||'')}</span></div>
-      <div class="k-val"${k.valSize?` style="font-size:${k.valSize};"`:''}>${esc(k.value)}${k.unit?` <span style="font-size:13px;color:var(--muted-2);">${esc(k.unit)}</span>`:''}</div>
+      <div class="${valClass}"${k.valSize?` style="font-size:${k.valSize};"`:''}>${isEmpty ? '—' : valStr}${(!isEmpty && k.unit)?` <span style="font-size:13px;color:var(--muted-2);">${esc(k.unit)}</span>`:''}</div>
       ${k.delta ? `<div class="k-delta ${esc(k.deltaDirection||'flat')}">${k.deltaDirection==='up'?'▲ ':k.deltaDirection==='down'?'▼ ':''}${esc(k.delta)}</div>` : (k.sub ? `<div class="k-sub">${esc(k.sub)}</div>` : '')}
     </div>`;
-  const imfndKeyMetricsLabels = ['Fatma Total Revenue (EGP)','Khaled Total PAID Revenue (EGP)','Khaled Total Organic Revenue (EGP)','Fatma Achievement (%) 1','Fatma Total Leads','Fatma Cost / Paid leads','Fatma New Tickets Sold','Fatma Organic New Tickets','Fatma Paid New Tickets','Fatma total Conversion Rate (%)','Fatma Organic Conversion Rate (%)','Fatma Paid Conversion Rate (%)','Fatma Total Spend ($)','Fatma Cost / Paid New Tickets (EGP)','Fatma Total ROAS','Fatma Paid ROAS','Fatma Refund Value (EGP)','Khaled Clicks','Khaled CPC ($)','Khaled CPM ($)','Khaled CTR (%)'];
-  renderFixedMetricGrid('imfndKeyMetrics', getPath(data,'imfnd.keyMetrics'), imfndKeyMetricsLabels, kpiGridFn);
-  const asB2cMetricsLabels = ['Nourhan B2C Sales new tickets revenue (EGP)','Nourhan total new Tickets sold','Nourhan total leads','Nourhan New Tickets Sold - new Organic / - paid'];
-  renderRows('asB2cMetrics', getPath(data,'as.b2cMetrics'), (k, i) => kpiGridFn({ ...k, label: asB2cMetricsLabels[i] || k.label }));
-  const oligenceRevenueLabels = ['Basant Total Revenue - Agency (EGP)','Basant Total cash in / collected - Agency (EGP)','Basant Pending / outstanding (EGP)','Basant Pipeline - Contracting (#) + Retainer (#)','Basant Overdue (EGP)'];
-  renderRows('oligenceRevenueMetrics', getPath(data,'oligence.revenueMetrics'), (k, i) => kpiGridFn({ ...k, label: oligenceRevenueLabels[i] || k.label }));
+  };
+  const imfndKeyMetricsLabels = ['Total Spend (EGP)','Total Leads','Total Organic Leads','SM Content Organic Leads','Other Tactics Leads (Webinars…etc)','Paid Leads','Cost / Paid Leads','New Tickets Sold (Total)','New Tickets Conversion Rate (%)','Organic New Sold Tickets','Organic Conversion Rate (%)','Paid New Sold Tickets','Paid Conversion Rate (%)','Cost / Paid New Tickets (EGP)','Total Revenue (EGP)','Total ROAS','Total Paid Revenue (EGP)','Total Organic Revenue (EGP)','Paid ROAS','Organic Clicks','Paid Clicks','Paid CPC ($)','Paid CPM ($)','Paid CTR (%)'];
+  const asKeyMetricsLabels = ['Total Spend (EGP)','Total Leads','Total Organic Leads','SM Content Organic Leads','Other Tactics Leads (Webinars…etc)','Paid Leads','Cost / Paid Leads','New Tickets Sold (Total)','New Tickets Conversion Rate (%)','Organic New Sold Tickets','Organic Conversion Rate (%)','Paid New Sold Tickets','Paid Conversion Rate (%)','Cost / Paid New Tickets (EGP)','Total Revenue (EGP)','Total ROAS','Total Paid Revenue (EGP)','Total Organic Revenue (EGP)','Paid ROAS','Organic Clicks','Paid Clicks','Paid CPC ($)','Paid CPM ($)','Paid CTR (%)'];
+  // IMFND Key Metrics is a frontend-only rendering adapter (Stage C1): the
+  // canonical Mapping stores these 24 values as individual scalar fields
+  // under imfnd.marketing.*, not as an array — there is no imfnd.keyMetrics
+  // in the webhook contract, and none is created here. This local array is
+  // assembled purely to feed the existing renderFixedMetricGrid/kpiGridFn
+  // card renderer; it carries only label+value, no invented presentation
+  // metadata (pillLabel/pillColor/delta/unit are intentionally omitted, not
+  // sourced from Column H). AS has its own separate adapter below (AS Stage
+  // C1) — kept independent rather than merged, per migration-isolation
+  // policy; Oligence's revenue-metrics renderer is untouched by either.
+  const imfndKeyMetricsData = [
+    { label: 'Total Spend (EGP)', value: getPath(data,'imfnd.marketing.totalSpend') },
+    { label: 'Total Leads', value: getPath(data,'imfnd.marketing.totalLeads') },
+    { label: 'Total Organic Leads', value: getPath(data,'imfnd.marketing.totalOrganicLeads') },
+    { label: 'SM Content Organic Leads', value: getPath(data,'imfnd.marketing.smContentOrganicLeads') },
+    { label: 'Other Tactics Leads (Webinars…etc)', value: getPath(data,'imfnd.marketing.otherTacticsLeads') },
+    { label: 'Paid Leads', value: getPath(data,'imfnd.marketing.paidLeads') },
+    { label: 'Cost / Paid Leads', value: getPath(data,'imfnd.marketing.costPerPaidLead') },
+    { label: 'New Tickets Sold (Total)', value: getPath(data,'imfnd.marketing.newTicketsSold') },
+    { label: 'New Tickets Conversion Rate (%)', value: formatPct(getPath(data,'imfnd.marketing.newTicketsConversionRate')) },
+    { label: 'Organic New Sold Tickets', value: getPath(data,'imfnd.marketing.organicNewSoldTickets') },
+    { label: 'Organic Conversion Rate (%)', value: formatPct(getPath(data,'imfnd.marketing.organicConversionRate')) },
+    { label: 'Paid New Sold Tickets', value: getPath(data,'imfnd.marketing.paidNewSoldTickets') },
+    { label: 'Paid Conversion Rate (%)', value: formatPct(getPath(data,'imfnd.marketing.paidConversionRate')) },
+    { label: 'Cost / Paid New Tickets (EGP)', value: getPath(data,'imfnd.marketing.costPerPaidNewTicket') },
+    { label: 'Total Revenue (EGP)', value: getPath(data,'imfnd.marketing.totalRevenue') },
+    { label: 'Total ROAS', value: getPath(data,'imfnd.marketing.totalRoas') },
+    { label: 'Total Paid Revenue (EGP)', value: getPath(data,'imfnd.marketing.totalPaidRevenue') },
+    { label: 'Total Organic Revenue (EGP)', value: getPath(data,'imfnd.marketing.totalOrganicRevenue') },
+    { label: 'Paid ROAS', value: getPath(data,'imfnd.marketing.paidRoas') },
+    { label: 'Organic Clicks', value: getPath(data,'imfnd.marketing.organicClicks') },
+    { label: 'Paid Clicks', value: getPath(data,'imfnd.marketing.paidClicks') },
+    { label: 'Paid CPC ($)', value: getPath(data,'imfnd.marketing.paidCpc') },
+    { label: 'Paid CPM ($)', value: getPath(data,'imfnd.marketing.paidCpm') },
+    { label: 'Paid CTR (%)', value: getPath(data,'imfnd.marketing.paidCtr') },
+  ];
+  renderFixedMetricGrid('imfndKeyMetrics', imfndKeyMetricsData, imfndKeyMetricsLabels, kpiGridFn);
+  // AS Key Metrics — same frontend-only rendering-adapter pattern as IMFND
+  // above (AS Stage C1): canonical values live as individual scalar fields
+  // under as.marketing.*, not as an array. No as.keyMetrics in the webhook
+  // contract, and none is created here. Kept as its own independent array
+  // rather than merged with imfndKeyMetricsData.
+  const asKeyMetricsData = [
+    { label: 'Total Spend (EGP)', value: getPath(data,'as.marketing.totalSpend') },
+    { label: 'Total Leads', value: getPath(data,'as.marketing.totalLeads') },
+    { label: 'Total Organic Leads', value: getPath(data,'as.marketing.totalOrganicLeads') },
+    { label: 'SM Content Organic Leads', value: getPath(data,'as.marketing.smContentOrganicLeads') },
+    { label: 'Other Tactics Leads (Webinars…etc)', value: getPath(data,'as.marketing.otherTacticsLeads') },
+    { label: 'Paid Leads', value: getPath(data,'as.marketing.paidLeads') },
+    { label: 'Cost / Paid Leads', value: getPath(data,'as.marketing.costPerPaidLead') },
+    { label: 'New Tickets Sold (Total)', value: getPath(data,'as.marketing.newTicketsSold') },
+    { label: 'New Tickets Conversion Rate (%)', value: formatPct(getPath(data,'as.marketing.newTicketsConversionRate')) },
+    { label: 'Organic New Sold Tickets', value: getPath(data,'as.marketing.organicNewSoldTickets') },
+    { label: 'Organic Conversion Rate (%)', value: formatPct(getPath(data,'as.marketing.organicConversionRate')) },
+    { label: 'Paid New Sold Tickets', value: getPath(data,'as.marketing.paidNewSoldTickets') },
+    { label: 'Paid Conversion Rate (%)', value: formatPct(getPath(data,'as.marketing.paidConversionRate')) },
+    { label: 'Cost / Paid New Tickets (EGP)', value: getPath(data,'as.marketing.costPerPaidNewTicket') },
+    { label: 'Total Revenue (EGP)', value: getPath(data,'as.marketing.totalRevenue') },
+    { label: 'Total ROAS', value: getPath(data,'as.marketing.totalRoas') },
+    { label: 'Total Paid Revenue (EGP)', value: getPath(data,'as.marketing.totalPaidRevenue') },
+    { label: 'Total Organic Revenue (EGP)', value: getPath(data,'as.marketing.totalOrganicRevenue') },
+    { label: 'Paid ROAS', value: getPath(data,'as.marketing.paidRoas') },
+    { label: 'Organic Clicks', value: getPath(data,'as.marketing.organicClicks') },
+    { label: 'Paid Clicks', value: getPath(data,'as.marketing.paidClicks') },
+    { label: 'Paid CPC ($)', value: getPath(data,'as.marketing.paidCpc') },
+    { label: 'Paid CPM ($)', value: getPath(data,'as.marketing.paidCpm') },
+    { label: 'Paid CTR (%)', value: getPath(data,'as.marketing.paidCtr') },
+  ];
+  renderFixedMetricGrid('asKeyMetrics', asKeyMetricsData, asKeyMetricsLabels, kpiGridFn);
+  // Oligence Revenue Recognition — frontend-only rendering adapter (Stage
+  // C): the canonical Mapping stores these 7 values as individual scalar
+  // fields under oligence.finance.*, not as an array — there is no
+  // oligence.revenueMetrics in the webhook contract, and none is created
+  // here. Order matches the existing UI exactly. Top Delivered Service
+  // Revenue (oligence.finance.topDeliveredServiceRevenue) is a Hero-only KPI
+  // and is intentionally NOT part of this adapter. MER - Oligence (blended)
+  // is a separate card outside this container, already migrated to
+  // oligence.finance.merBlended in Oligence Stage A — left untouched here.
+  const oligenceRevenueRecognitionData = [
+    { label: 'Total Revenue - Agency (EGP)', value: getPath(data,'oligence.finance.totalRevenue') },
+    { label: 'Achievement (%)', value: formatPct(getPath(data,'oligence.finance.achievement')) },
+    { label: 'Total cash in / collected - Agency (EGP)', value: getPath(data,'oligence.finance.cashIn') },
+    { label: 'Pending / outstanding (EGP)', value: getPath(data,'oligence.finance.pending') },
+    { label: 'Overdue (EGP)', value: getPath(data,'oligence.finance.overdue') },
+    { label: 'Pipeline - Potential (#)', value: getPath(data,'oligence.finance.pipelinePotential') },
+    { label: 'Pipeline - Contracting (#)', value: getPath(data,'oligence.finance.pipelineContracting') },
+  ];
+  (function renderOligenceRevenueRecognition(){
+    const el = document.getElementById('oligenceRevenueMetrics');
+    if(!el) return;
+    el.innerHTML = oligenceRevenueRecognitionData.map(kpiGridFn).join('');
+  })();
 
-  renderRows('oligenceClientsBody', getPath(data,'oligence.clients'), c => `
+  // Oligence Client Portfolio — canonical scalar sources (Oligence Stage
+  // E2). Row shape verified in Stage E1: cashOut is NOT a Client Portfolio
+  // field (it's the company-wide oligence.finance.cashFlow.cashOut, a
+  // different concept from a different sheet) — totalSpend is the real
+  // per-client field. Likewise "note" was never canonical here — topRisk is
+  // the real field. The sheet's unmapped "Notes" column is intentionally
+  // NOT added as an 11th column, per Stage E1.
+  // Stage 6.1 fix: `c.cashIn||'Not tracked'` (etc.) used JS truthiness,
+  // which mistakes a genuine numeric 0 for missing data (0 is falsy).
+  // numCell() distinguishes them correctly — 0 is real data and renders
+  // as 0; only undefined/null/'' render as the missing-value dash.
+  function numCell(v){ return (v === undefined || v === null || v === '') ? '—' : esc(v); }
+  const oligenceClientRowFn = c => `
     <tr>
-      <td class="name" style="padding-left:20px;">${esc(c.name)}</td><td class="muted-cell">${esc(c.service)}</td>
-      <td><span class="pill ${esc(c.statusColor||'grey')}"><span class="dt"></span>${esc(c.statusLabel)}</span></td>
-      <td class="muted-cell">${esc(c.note)}</td>
+      <td class="name" style="padding-left:20px;">${esc(c.brand)}</td>
       <td class="num">${esc(c.totalRevenue)}</td>
-      <td class="num muted-cell">${esc(c.cashIn||'Not tracked')}</td>
-      <td class="num muted-cell">${esc(c.outstanding||'Not tracked')}</td>
-      <td class="num muted-cell">${esc(c.cashOut||'Not tracked')}</td>
-      <td class="num muted-cell" style="padding-right:20px;">${esc(c.netCashFlow||'Not tracked')}</td>
-    </tr>`);
+      <td class="num muted-cell">${numCell(c.cashIn)}</td>
+      <td class="num muted-cell">${numCell(c.totalSpend)}</td>
+      <td class="num muted-cell">${numCell(c.pending)}</td>
+      <td class="num">${esc(c.overdue)}</td>
+      <td class="num">${esc(c.mer)}</td>
+      <td class="num">${esc(c.momGrowthRate)}</td>
+      <td class="muted-cell">${esc(c.services)}</td>
+      <td class="muted-cell" style="padding-right:20px;">${esc(c.topRisk)}</td>
+    </tr>`;
+  function oligenceClientsTotalRowHtml(rows){
+    const mer = ratioFromVisible(rows, 'totalRevenue', 'totalSpend');
+    return `<tr class="total-row">
+      <td class="name" style="padding-left:20px;">Total</td>
+      <td class="num">${totalCell(sumVisible(rows,'totalRevenue'))}</td>
+      <td class="num">${totalCell(sumVisible(rows,'cashIn'))}</td>
+      <td class="num">${totalCell(sumVisible(rows,'totalSpend'))}</td>
+      <td class="num">${totalCell(sumVisible(rows,'pending'))}</td>
+      <td class="num">${totalCell(sumVisible(rows,'overdue'))}</td>
+      <td class="num">${totalCell(mer)}</td>
+      <td class="num"></td>
+      <td class="muted-cell"></td>
+      <td class="muted-cell" style="padding-right:20px;"></td>
+    </tr>`;
+  }
+  renderWithTotal('oligenceClientsBody', getPath(data,'oligence.finance.clientPortfolio'), oligenceClientRowFn, oligenceClientsTotalRowHtml);
 }
 
 // Replaces a container's content with `rowFn(item, index)` per array item.
@@ -284,16 +632,37 @@ function renderFixedMetricGrid(containerId, arr, labels, cardFn){
   }).join('');
 }
 
-// ---- Period selector (All Data / Filter by Month + Week) ----
-// "All Data" sends { range:'all' } — every row, no filter.
-// "Filter by Month & Week" requires BOTH a month and at least one week choice
-// and sends { range:'filtered', month, week }, where week is an array of the
-// checked values (each one of the 4 fixed weeks or "month", the monthly
-// rollup row). Any change re-fetches live data.
+// ---- Period selector (All Data / Filter by Year, Month + Week) ----
+// "All Data" sends { range:'all' } — every row, no filter. n8n's own
+// monthly-rollup-first/weekly-fallback rule for All Data is applied
+// server-side only — the frontend never implements or approximates it.
+// "Filter by Year, Month & Week" requires a year, a month, AND at least one
+// week/month checkbox, and sends { range:'filtered', year, month, week },
+// where week is an array of the checked values in checkbox order (each one
+// of the 4 fixed weeks or "month", the monthly rollup row). The user may
+// manually check any combination — including "month" together with
+// individual weeks — with no mutual exclusion; whatever is checked is sent
+// exactly as-is. Any change re-fetches live data.
 function togglePeriodMenu(e){
   e.stopPropagation();
   document.getElementById('periodMenu').classList.toggle('open');
 }
+// Populates #periodYear with a fixed range around the current calendar
+// year (current-5 .. current+5, 11 options) and pre-selects the current
+// year. Runs once at load — this only sets the dropdown's default value,
+// it does not switch the dashboard into filtered mode (currentRange stays
+// { range: 'all' } until the user picks Month + Week and clicks Apply).
+function populatePeriodYear(){
+  const el = document.getElementById('periodYear');
+  if(!el) return;
+  const currentYear = new Date().getFullYear();
+  const options = [];
+  for(let y = currentYear - 5; y <= currentYear + 5; y++){
+    options.push(`<option value="${y}"${y === currentYear ? ' selected' : ''}>${y}</option>`);
+  }
+  el.innerHTML = options.join('');
+}
+populatePeriodYear();
 function setAllPeriod(e){
   if(e) e.stopPropagation();
   document.getElementById('periodLabel').textContent = 'All Data';
@@ -304,14 +673,15 @@ function setAllPeriod(e){
 }
 function applyFilteredPeriod(e){
   e.stopPropagation();
+  const year = document.getElementById('periodYear').value;
   const month = document.getElementById('periodMonth').value;
   const weeks = Array.from(document.querySelectorAll('#periodWeek input[type="checkbox"]:checked')).map(cb => cb.value);
-  if(!month || !weeks.length){ return; } // both conditions are required to filter
-  const label = month + ' · ' + weeks.map(w => w === 'month' ? 'Month' : w.replace('week','Week')).join(', ');
+  if(!year || !month || !weeks.length){ return; } // year, month, and at least one week/month checkbox are all required to filter
+  const label = year + ' · ' + month + ' · ' + weeks.map(w => w === 'month' ? 'Month' : w.replace('week','Week')).join(', ');
   document.getElementById('periodLabel').textContent = label;
   document.querySelectorAll('.period-opt').forEach(el => el.classList.toggle('active', el.dataset.mode === 'filtered'));
   document.getElementById('periodMenu').classList.remove('open');
-  currentRange = { range: 'filtered', month: month, week: weeks };
+  currentRange = { range: 'filtered', year: Number(year), month: month, week: weeks };
   fetchDashboardData();
 }
 document.addEventListener('click', () => document.getElementById('periodMenu').classList.remove('open'));

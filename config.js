@@ -1,1 +1,1 @@
-const WEBHOOK_URL = 'https://primary-production-fc21a.up.railway.app/webhook/dashboard-ceo';
+const WEBHOOK_URL = 'https://primary-production-fc21a.up.railway.app/webhook/ceo-dashboard-team';

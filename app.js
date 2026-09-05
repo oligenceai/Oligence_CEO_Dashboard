@@ -421,8 +421,16 @@ function applyData(data){
     <tr><td class="name" style="padding-left:20px;">${esc(r.platform)}</td><td class="num">${esc(r.viewsImpressions)}</td><td class="num">${esc(r.engagement)}</td><td class="num">${esc(r.newFollowers)}</td><td class="num">${esc(r.visits)}</td></tr>`;
   renderRows('oligencePlatformBreakdownBody', getPath(data,'oligence.marketing.platformBreakdown'), oligencePlatformRowFn);
 
+  // OLIGENCE CONTENT DELIVERY BY CLIENT KPI FIX: onTimeDelivery/defectRate
+  // come from Rana OLIGENCE clients as 0-1 fractions (confirmed against
+  // real data — a different scale than the sibling Rana OLIGENCE sheet's
+  // 0-100 numbers used by the oligence.content.* cards), so they use the
+  // existing fraction-scale formatPct(), not formatPctRaw(). numCell()
+  // gives the standard missing->"—"/real-zero-included table-cell
+  // behavior already used elsewhere (e.g. Client Portfolio).
+  // fulfillmentTimeAverage stays a plain numeric cell, no % sign.
   const contentDeliveryByClientRowFn = r => `
-    <tr><td class="name" style="padding-left:20px;">${esc(r.brand)}</td><td class="num">${esc(r.totalOutputs)}</td><td class="num">${esc(r.published)}</td><td class="num">${esc(r.readyToPublish)}</td><td class="num">${esc(r.inProgress)}</td><td class="num">${esc(r.approvalsPending)}</td><td class="num">${esc(r.videoProduction)}</td><td class="num">${esc(r.aiVideo)}</td><td class="num">${esc(r.carousels)}</td><td class="num">${esc(r.staticPosts)}</td><td class="num">${esc(r.copiesWritten)}</td><td class="num">${esc(r.shoots)}</td><td class="num">${esc(r.onTimeDelivery)}</td><td class="num">${esc(r.defectRate)}</td><td class="num">${esc(r.fulfillmentTimeAverage)}</td></tr>`;
+    <tr><td class="name" style="padding-left:20px;">${esc(r.brand)}</td><td class="num">${esc(r.totalOutputs)}</td><td class="num">${esc(r.published)}</td><td class="num">${esc(r.readyToPublish)}</td><td class="num">${esc(r.inProgress)}</td><td class="num">${esc(r.approvalsPending)}</td><td class="num">${esc(r.videoProduction)}</td><td class="num">${esc(r.aiVideo)}</td><td class="num">${esc(r.carousels)}</td><td class="num">${esc(r.staticPosts)}</td><td class="num">${esc(r.copiesWritten)}</td><td class="num">${esc(r.shoots)}</td><td class="num">${numCell(formatPct(r.onTimeDelivery))}</td><td class="num">${numCell(formatPct(r.defectRate))}</td><td class="num">${numCell(r.fulfillmentTimeAverage)}</td></tr>`;
   renderRows('oligenceContentDeliveryByClientBody', getPath(data,'oligence.marketing.contentDeliveryByClient'), contentDeliveryByClientRowFn);
 
   // Stage 7 (Part 3): oligence.content.byBrand[] — Type B array, one

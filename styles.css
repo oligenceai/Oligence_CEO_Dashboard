@@ -232,7 +232,7 @@
   .imfnd-funnel-bar-wrap{display:flex; justify-content:center;}
   .imfnd-funnel-bar{height:20px; min-width:4px; background:var(--green-line); border-radius:4px;}
 
-  /* ===== AS Lead Funnel (AS Stage C2 — scoped to AS only, mirrors the IMFND funnel's visual language, does not affect .imfnd-funnel-*/.bar-row) ===== */
+  /* ===== AS Lead Funnel (AS Stage C2 — scoped to AS only, mirrors the IMFND funnel's visual language, does not affect .imfnd-funnel- selectors or .bar-row) ===== */
   .as-funnel-stage{text-align:center; padding:8px 0;}
   .as-funnel-label{font-size:11.5px; font-weight:600; color:var(--muted-2);}
   .as-funnel-value{font-size:15px; font-weight:800; margin:2px 0 6px; font-variant-numeric:tabular-nums;}

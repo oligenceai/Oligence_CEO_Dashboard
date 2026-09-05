@@ -593,6 +593,12 @@ function applyData(data){
   // numCell() distinguishes them correctly — 0 is real data and renders
   // as 0; only undefined/null/'' render as the missing-value dash.
   function numCell(v){ return (v === undefined || v === null || v === '') ? '—' : esc(v); }
+  // CLIENT PORTFOLIO MOM GROWTH RATE FIX: momGrowthRate comes from Basant
+  // OLIGENCE clients as a plain 0-100-scale number (confirmed against real
+  // data — same scale as the Oligence Content KPI raw-percent fields), so
+  // it uses formatPctRaw() (no rescaling), not the fraction-scale
+  // formatPct(). numCell() gives the standard missing->"—"/real-zero-
+  // included cell behavior already used for this row's other fields.
   const oligenceClientRowFn = c => `
     <tr>
       <td class="name" style="padding-left:20px;">${esc(c.brand)}</td>
@@ -602,7 +608,7 @@ function applyData(data){
       <td class="num muted-cell">${numCell(c.pending)}</td>
       <td class="num">${esc(c.overdue)}</td>
       <td class="num">${esc(c.mer)}</td>
-      <td class="num">${esc(c.momGrowthRate)}</td>
+      <td class="num">${numCell(formatPctRaw(c.momGrowthRate))}</td>
       <td class="muted-cell">${esc(c.services)}</td>
       <td class="muted-cell" style="padding-right:20px;">${esc(c.topRisk)}</td>
     </tr>`;

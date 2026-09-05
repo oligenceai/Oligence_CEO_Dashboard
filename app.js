@@ -72,6 +72,20 @@ function formatPct(v){
   return (typeof v === 'number' && Number.isFinite(v)) ? (v * 100).toFixed(1) + '%' : undefined;
 }
 
+// OLIGENCE CONTENT KPI FIX: On-Time Delivery / Defect Rate are stored in
+// Build Dashboard JSON as plain 0-100-scale numbers (e.g. 92, not 0.92,
+// confirmed against real sheet data), unlike every field in
+// PERCENTAGE_FIELDS above which are 0-1 fractions. Reusing formatPct()
+// here would multiply by 100 again (92 -> "9200.0%"). This set/helper
+// pair displays them as a percentage without rescaling.
+const RAW_PERCENTAGE_FIELDS = new Set([
+  'oligence.content.onTimeDelivery',
+  'oligence.content.defectRate',
+]);
+function formatPctRaw(v){
+  return (typeof v === 'number' && Number.isFinite(v)) ? v.toFixed(1) + '%' : undefined;
+}
+
 // ---- Type A Total Row helpers (Stage 6, frontend-only) ----
 // Totals are computed ONLY from the rows actually rendered in a given
 // table (post status-filter, where applicable) — never from the full
@@ -129,6 +143,7 @@ function applyData(data){
     const path = el.getAttribute('data-field');
     let val = getPath(data, path);
     if(PERCENTAGE_FIELDS.has(path)) val = formatPct(val);
+    else if(RAW_PERCENTAGE_FIELDS.has(path)) val = formatPctRaw(val);
     if(el.classList.contains('k-val')){
       const isEmpty = (val === undefined);
       const valStr = isEmpty ? '' : String(val);

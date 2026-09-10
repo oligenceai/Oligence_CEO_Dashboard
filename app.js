@@ -459,6 +459,20 @@ function applyData(data){
   renderRows('groupCashFlowByBrandBody', getPath(data,'group.cashFlowByBrand'), r => `
     <tr><td class="name" style="padding-left:20px;">${esc(r.brand)}</td><td class="num">${esc(r.cashInTransactions)}</td><td class="num">${esc(r.cashIn)}</td><td class="num">${esc(r.cashOut)}</td><td class="num">${esc(r.netCashFlow)}</td></tr>`);
 
+  // Company Finance pages: Cash Flow by Brand — company-specific companion
+  // to group.cashFlowByBrand[] above. Same row shape (brand/
+  // cashInTransactions/cashIn/cashOut/netCashFlow) and same row renderer,
+  // sourced from imfnd/as/oligence.finance.cashFlowByBrand[] (n8n filters
+  // "Nouran Cashflow" rows by company token, then groups by original Brand
+  // label — see Build Dashboard JSON). Each company table shows only the
+  // Brand labels eligible for that company; a multi-brand label like
+  // "Oligence & AS" appears unrenamed in every eligible company's table.
+  const cashFlowByBrandRowFn = r => `
+    <tr><td class="name" style="padding-left:20px;">${esc(r.brand)}</td><td class="num">${esc(r.cashInTransactions)}</td><td class="num">${esc(r.cashIn)}</td><td class="num">${esc(r.cashOut)}</td><td class="num">${esc(r.netCashFlow)}</td></tr>`;
+  renderRows('imfndCashFlowByBrandBody', getPath(data,'imfnd.finance.cashFlowByBrand'), cashFlowByBrandRowFn);
+  renderRows('asCashFlowByBrandBody', getPath(data,'as.finance.cashFlowByBrand'), cashFlowByBrandRowFn);
+  renderRows('oligenceCashFlowByBrandBody', getPath(data,'oligence.finance.cashFlowByBrand'), cashFlowByBrandRowFn);
+
   // Group page: Cost Base & Subscriptions — canonical scalar source (Group
   // Stage B). group.subscriptions[] is built by n8n directly from the
   // shared "Nouran Subscriptions" tab (same tab each company's own

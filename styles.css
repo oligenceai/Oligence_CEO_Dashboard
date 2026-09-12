@@ -92,19 +92,6 @@
   .coverage-card .cc-head{display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:700; color:var(--muted); margin-bottom:2px;}
   .coverage-card .cc-sub{font-size:11.5px; color:var(--muted-2); margin-bottom:2px;}
 
-  /* ===== Mini pillar row (brand Home quick-glance) ===== */
-  .pillar-mini-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:22px;}
-  .pillar-mini{background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow); cursor:pointer; transition:box-shadow .15s, transform .15s;}
-  .pillar-mini:hover{box-shadow:0 4px 14px rgba(16,24,40,0.08); transform:translateY(-1px);}
-  .pillar-mini .pm-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:11px; gap:8px;}
-  .pillar-mini .pm-name{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); overflow-wrap:anywhere;}
-  /* Primary label -> primary value: the card's main focus. */
-  .pillar-mini .pm-source{font-size:10px; font-weight:600; color:var(--muted-2); text-transform:uppercase; letter-spacing:.02em; line-height:1.35; margin-bottom:3px; overflow-wrap:anywhere;}
-  .pillar-mini .pm-val{font-size:19px; font-weight:800; color:var(--text); line-height:1.25; margin-bottom:10px; overflow-wrap:anywhere;}
-  /* Secondary label + value: supporting info, clearly de-emphasized. */
-  .pillar-mini .pm-val + .pm-source{margin-bottom:2px; opacity:.85;}
-  .pillar-mini .pm-sub{font-size:10.5px; font-weight:500; color:var(--muted-2); line-height:1.3; margin-top:0; overflow-wrap:anywhere;}
-
   .content{padding:28px 32px 60px; max-width:1440px;}
   .page{display:none;}
   .page.active{display:block; animation:fade .25s ease;}
@@ -263,7 +250,6 @@
     .grid-5{grid-template-columns:repeat(2,1fr);}
     .grid-3{grid-template-columns:1fr 1fr;}
     .dec-grid{grid-template-columns:1fr 1fr;}
-    .pillar-mini-grid{grid-template-columns:repeat(3,1fr);}
   }
 
   /* Any card wrapping a table scrolls horizontally within itself instead
@@ -291,7 +277,6 @@
 
     .content{padding:20px 18px 48px;}
     .grid-4, .grid-5, .grid-3, .grid-2{grid-template-columns:1fr 1fr;}
-    .pillar-mini-grid{grid-template-columns:repeat(2,1fr);}
     .dec-grid{grid-template-columns:1fr 1fr;}
     .hero-stats{grid-template-columns:repeat(3,1fr) !important; grid-template-rows:none !important;}
   }
@@ -322,7 +307,6 @@
     .hero-stats{grid-template-columns:repeat(2,1fr) !important;}
 
     .grid-2, .grid-3, .grid-4, .grid-5{grid-template-columns:1fr;}
-    .pillar-mini-grid{grid-template-columns:1fr;}
     .dec-grid{grid-template-columns:1fr;}
 
     .bar-row{grid-template-columns:96px 1fr 56px; gap:8px;}

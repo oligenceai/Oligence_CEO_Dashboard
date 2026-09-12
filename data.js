@@ -6,17 +6,33 @@
    returns it pre-shaped for render. Triggered on page load and on Refresh.
 
    REQUEST — sent as POST JSON body to WEBHOOK_URL:
-     All data:        { "range": "all" }
-     Month + Week:    { "range": "filtered", "month": "July", "week": "week 1" }
-     ("month" is one of the 12 month names; "week" is one of
-     "week 1" / "week 2" / "week 3" / "week 4" / "month".
-     Each employee-owned table in the sheet has its own pair of columns —
-     e.g. "Basant Month" / "Basant week number" — so n8n should apply this
-     same month+week filter against every "<Name> Month" / "<Name> week
-     number" column pair when building the response, matching rows where
-     both the month and week values equal what was sent. "week":"month"
-     means: return the monthly rollup row for that month rather than a
-     single week's row.)
+
+     All Data:
+       { "range": "all" }
+
+     Manual Filter (Year + Month + Week):
+       { "range": "filtered", "year": 2026, "month": "October", "week": ["week 1", "week 2"] }
+
+     - "year" is a plain number (e.g. 2026), taken directly from the Year
+       dropdown (defaults to the current calendar year, but the user can
+       pick any year in the dropdown's range).
+     - "month" is a full English month name ("January".."December").
+     - "week" is ALWAYS an array, never a bare string — one entry per
+       checked box, in the order the user checked them: any combination of
+       "week 1" / "week 2" / "week 3" / "week 4" / "month". The user may
+       manually combine "month" with individual weeks (e.g.
+       ["week 1", "week 2", "month"]) — the frontend applies no mutual
+       exclusion and sends exactly what was checked, unmodified.
+     - The frontend never parses or normalizes the Google Sheet's own Month
+       date values (e.g. a cell displaying "Oct-2026" backed by a real date
+       serial) — it only ever sends the plain year number and month name
+       above. Matching that against the sheet's real date values is n8n's
+       responsibility.
+     - The "Monthly Rollup First → Weekly Fallback" rule (prefer a period's
+       monthly-rollup row when one exists, otherwise fall back to summing
+       its weekly rows) applies ONLY to "range":"all" processing, and is
+       implemented entirely in n8n — the frontend does not implement,
+       approximate, or depend on this rule.
 
    RESPONSE — a single JSON object shaped like this (any key may be omitted;
    the page shows ONLY what this response actually contains — omitted or
@@ -28,9 +44,6 @@
        "statusLabel": "Mixed", "compositeScore": 71,
        "brandsOnTrack": "1 / 3", "brandsAtRisk": "2 / 3",
        "brands": [{ "name":"IMFND","health":92,"statusLabel":"Scale","statusColor":"green","keyMetric":"...","note":"..." }, ...],
-       "aiSignals": [{ "typeLabel":"Red Flag","typeColor":"red","severity":"Critical","item":"...","detail":"...","source":"..." }, ...],
-       "cashflowAlerts": [{ "levelLabel":"Critical","levelColor":"red","source":"...","issue":"...","detail":"...","balance":"..." }, ...],
-       "decisions": { "scale":[{"title":"...","detail":"..."}], "fix":[...], "stop":[...], "automate":[...], "escalate":[...] },
        "projects": [{ "brand":"...","task":"...","deadline":"..." }, ...],
        "teamPulse": [{ "name":"...","role":"...","gap":"...","score":83 }, ...]
      },

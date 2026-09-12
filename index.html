@@ -124,27 +124,8 @@
 <div>
 <h2>Business Performance Health</h2>
 </div>
-<div class="dash-subhead-right">
-<span class="pill amber" data-field="group.statusLabel" id="groupStatusPill"></span>
-<span class="health-score">Composite score <b data-field="group.compositeScore" id="groupCompositeScoreTop"></b></span>
 </div>
-</div>
-<div class="sec-head" data-section="home" style="margin-top:0;"><div><h2>Top-line</h2></div></div>
-<div class="grid-3" style="margin-bottom:20px;">
-<div class="card kpi">
-<div class="k-top"><span class="k-lbl">Composite Score</span><span class="pill amber" data-field="group.statusLabel"></span></div>
-<div class="k-val" data-field="group.compositeScore"></div>
-</div>
-<div class="card kpi">
-<div class="k-top"><span class="k-lbl">Brands On Track</span><span class="pill green"></span></div>
-<div class="k-val" data-field="group.brandsOnTrack"></div>
-</div>
-<div class="card kpi">
-<div class="k-top"><span class="k-lbl">Brands At Risk</span><span class="pill red"></span></div>
-<div class="k-val" data-field="group.brandsAtRisk"></div>
-</div>
-</div>
-<div class="sec-head" data-section="home"><div><h2>Brand Health</h2></div></div>
+<div class="sec-head" data-section="home" style="margin-top:0;"><div><h2>Brand Health</h2></div></div>
 <div class="card" style="padding:0; margin-bottom:20px;">
 <table>
 <thead><tr><th style="padding-left:20px;">Brand</th><th>Achievement</th></tr></thead>
@@ -183,10 +164,6 @@
 <div>
 <h2>IMFND Dashboard</h2>
 </div>
-<div class="dash-subhead-right">
-<span class="pill green" data-field="imfnd.statusLabel"></span>
-<span class="health-score">Health score <b data-field="imfnd.healthScore"></b></span>
-</div>
 </div>
 <div class="sec-head" data-section="home" style="margin-top:0;"><div><h2>Executive Home</h2><div class="sub">IMFND at a glance · current period</div></div></div>
 <div class="hero" style="margin-bottom:22px;">
@@ -212,15 +189,10 @@
 <div class="hero-stat"><div class="k">Top Program Revenue (EGP)</div><div class="v" data-field="imfnd.operations.trainingDelivered.topProgramRevenue"></div></div>
 </div>
 </div>
-<div class="pillar-mini-grid" data-repeat="imfnd.pillars" id="imfndPillars"></div>
 <div class="sec-head" data-section="marketing"><div><h2>Key Metrics</h2><div class="sub">Every tracked metric for IMFND · current period</div></div></div>
 <div class="grid-4" data-repeat="imfnd.keyMetrics" id="imfndKeyMetrics" style="margin-bottom:16px;"></div>
 <div style="height:1px;background:var(--border-soft);margin:4px 0 16px;"></div>
 <div class="grid-4" style="margin-bottom:16px;">
-<div class="card kpi">
-<div class="k-top"><span class="k-lbl">Total Revenue (EGP)</span><span class="pill grey"></span></div>
-<div class="k-val" data-field="imfnd.marketing.totalRevenue"></div>
-</div>
 <div class="card kpi">
 <div class="k-top"><span class="k-lbl">Revenue Target (EGP)</span><span class="pill grey"></span></div>
 <div class="k-val" data-field="imfnd.marketing.revenueTarget"></div>
@@ -228,10 +200,6 @@
 <div class="card kpi">
 <div class="k-top"><span class="k-lbl">Achievement (%) - Revenue</span><span class="pill grey"></span></div>
 <div class="k-val" data-field="imfnd.marketing.revenueAchievement"></div>
-</div>
-<div class="card kpi">
-<div class="k-top"><span class="k-lbl">New Tickets Sold (Total)</span><span class="pill grey"></span></div>
-<div class="k-val" data-field="imfnd.marketing.newTicketsSold"></div>
 </div>
 <div class="card kpi">
 <div class="k-top"><span class="k-lbl">New Tickets Target</span><span class="pill grey"></span></div>
@@ -450,10 +418,6 @@
 <div>
 <h2>AS Dashboard</h2>
 </div>
-<div class="dash-subhead-right">
-<span class="pill amber" data-field="as.statusLabel"></span>
-<span class="health-score">Health score <b data-field="as.healthScore"></b></span>
-</div>
 </div>
 <div class="sec-head" data-section="home" style="margin-top:0;"><div><h2>Executive Home</h2><div class="sub">AS at a glance · current period</div></div></div>
 <div class="hero" style="margin-bottom:22px;">
@@ -479,14 +443,9 @@
 <div class="hero-stat"><div class="k">Top Program Revenue (EGP)</div><div class="v" data-field="as.operations.trainingDelivered.topProgramRevenue"></div></div>
 </div>
 </div>
-<div style="font-size:10.5px; color:var(--muted-2); font-style:italic; margin-top:6px;">Total Revenue combines B2C + B2B but isn't consolidated into one monthly line yet — a flagged tracking gap.</div><div class="pillar-mini-grid" data-repeat="as.pillars" id="asPillars"></div>
 <div class="sec-head" data-section="marketing"><div><h2>Key Metrics</h2><div class="sub">Every tracked metric for AS · current period</div></div></div>
 <div class="grid-4" data-repeat="as.keyMetrics" id="asKeyMetrics" style="margin-bottom:16px;"></div>
 <div class="grid-4" style="margin-bottom:16px;">
-<div class="card kpi">
-<div class="k-top"><span class="k-lbl">Total Revenue (EGP)</span><span class="pill grey"></span></div>
-<div class="k-val" data-field="as.marketing.totalRevenue"></div>
-</div>
 <div class="card kpi">
 <div class="k-top"><span class="k-lbl">Revenue Target (EGP)</span><span class="pill grey"></span></div>
 <div class="k-val" data-field="as.marketing.revenueTarget"></div>
@@ -494,10 +453,6 @@
 <div class="card kpi">
 <div class="k-top"><span class="k-lbl">Achievement (%) - Revenue</span><span class="pill grey"></span></div>
 <div class="k-val" data-field="as.marketing.revenueAchievement"></div>
-</div>
-<div class="card kpi">
-<div class="k-top"><span class="k-lbl">New Tickets Sold (Total)</span><span class="pill grey"></span></div>
-<div class="k-val" data-field="as.marketing.newTicketsSold"></div>
 </div>
 <div class="card kpi">
 <div class="k-top"><span class="k-lbl">New Tickets Target</span><span class="pill grey"></span></div>
@@ -718,10 +673,6 @@
 <div>
 <h2>Oligence Dashboard</h2>
 </div>
-<div class="dash-subhead-right">
-<span class="pill amber" data-field="oligence.statusLabel"></span>
-<span class="health-score">Health score <b data-field="oligence.healthScore"></b></span>
-</div>
 </div>
 <div class="sec-head" data-section="home" style="margin-top:0;"><div><h2>Executive Home</h2><div class="sub">Oligence at a glance · current period</div></div></div>
 <div class="hero" style="margin-bottom:22px;">
@@ -745,7 +696,6 @@
 <div class="hero-stat"><div class="k">Top Delivered Service revenue</div><div class="v" data-field="oligence.finance.topDeliveredServiceRevenue"></div></div>
 </div>
 </div>
-<div class="pillar-mini-grid" data-repeat="oligence.pillars" id="oligencePillars"></div>
 <div class="sec-head" data-section="marketing"><div><h2>Marketing Metrics</h2></div></div>
 <div class="grid-4" style="margin-bottom:16px;">
 <div class="card kpi">

@@ -4,8 +4,9 @@
     {
       "name": "static-server",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8099"],
-      "port": 8099
+      "runtimeArgs": ["-c", "import http.server,os,socketserver; port=int(os.environ.get('PORT','8099')); socketserver.TCPServer.allow_reuse_address=True; socketserver.TCPServer(('',port), http.server.SimpleHTTPRequestHandler).serve_forever()"],
+      "port": 8099,
+      "autoPort": true
     }
   ]
 }

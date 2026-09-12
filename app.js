@@ -58,12 +58,28 @@ const PERCENTAGE_FIELDS = new Set([
   'imfnd.marketing.revenueAchievement',
   'imfnd.marketing.ticketsAchievement',
   'imfnd.sales.b2b.b2bAchievement',
+  'imfnd.marketing.paidCtr',
+  'imfnd.marketing.content.emailConversion',
+  'imfnd.marketing.content.whatsappConversion',
+  'imfnd.marketing.costPerPaidLead',
+  'imfnd.marketing.totalRoas',
+  'imfnd.marketing.paidRoas',
+  'imfnd.marketing.paidCpc',
+  'imfnd.marketing.paidCpm',
   'as.marketing.newTicketsConversionRate',
   'as.marketing.organicConversionRate',
   'as.marketing.paidConversionRate',
   'as.marketing.revenueAchievement',
   'as.marketing.ticketsAchievement',
   'as.sales.b2b.b2bAchievement',
+  'as.marketing.paidCtr',
+  'as.marketing.content.emailConversion',
+  'as.marketing.content.whatsappConversion',
+  'as.marketing.costPerPaidLead',
+  'as.marketing.totalRoas',
+  'as.marketing.paidRoas',
+  'as.marketing.paidCpc',
+  'as.marketing.paidCpm',
   'oligence.finance.achievement',
 ]);
 // Real zero (0) must render "0.0%", not be treated as missing; only
@@ -205,61 +221,6 @@ function applyData(data){
   renderRows('oligenceTeamPulse', getPath(data,'oligence.teamPulse'), teamCardFn());
   renderRows('imfndTeamScorecards', getPath(data,'imfnd.teamPulse'), teamCardFn());
   renderRows('asTeamScorecards', getPath(data,'as.teamPulse'), teamCardFn());
-
-  const pillarSections = ['marketing','sales','finance','operations','projects'];
-  const pillarNames = ['Marketing','Sales','Finance','Operations','Projects'];
-  // Source-column citation per pillar mini-card, verified against each
-  // tab's own documentation row. One citation per DISPLAYED number, so it
-  // never mixes "/" (a true ratio shown as one fraction) with "+" (two
-  // unrelated numbers just placed on the same line) in a single string —
-  // that combination reads as a formula and isn't one.
-  const PILLAR_SOURCE_COLUMNS = {
-    imfnd: [
-      { val: 'Total ROAS', sub: 'Total Spend ($)' },
-      { val: 'New Tickets Sold / New Tickets Target', sub: 'total Conversion Rate (%)' },
-      { val: 'Net Cash Flow (EGP)', sub: 'MER' },
-      { val: 'Organic New Tickets + Paid New Tickets', sub: '' },
-      { val: 'Top Program', sub: 'Top Program Revenue (EGP)' },
-    ],
-    as: [
-      { val: 'Total ROAS', sub: 'Total Spend ($)' },
-      { val: 'total new Tickets sold', sub: 'New Tickets Sold - new Organic + New Tickets Sold - paid' },
-      { val: 'Net Cash Flow (EGP)', sub: 'MER' },
-      { val: 'Total Platform Views', sub: 'Total engagment' },
-      { val: 'B2B Pipeline (# open)', sub: '' },
-    ],
-    oligence: [
-      { val: 'MER - Oligence (blended)', sub: '' },
-      { val: 'Pipeline - Contracting (#) + Pipeline - Retainer (#)', sub: 'Pipeline - Potential (#) + Pipeline - Quotation (#)' },
-      { val: 'Net Cash Flow (EGP)', sub: 'Overdue (EGP)' },
-      { val: 'Total Outputs', sub: 'On-Time Delivery %' },
-      { val: 'Top Risk / Escalation', sub: '' },
-    ],
-  };
-  ['imfnd','as','oligence'].forEach(page => {
-    const el = document.getElementById(page + 'Pillars');
-    if(!el) return;
-    const arr = getPath(data, page + '.pillars');
-    const sourceCols = PILLAR_SOURCE_COLUMNS[page];
-    el.innerHTML = pillarSections.map((section, i) => {
-      const p = (Array.isArray(arr) && arr[i]) ? arr[i] : {};
-      const src = sourceCols ? sourceCols[i] : null;
-      // IMFND, AS, and Oligence (Oligence Stage B) have all migrated to the
-      // canonical pillar field names — every page now reads the same shape.
-      const usesCanonicalPillarFields = (page === 'imfnd' || page === 'as' || page === 'oligence');
-      const pVal = usesCanonicalPillarFields ? p.primaryValue : p.value;
-      const pSub = usesCanonicalPillarFields ? p.subValue : p.sub;
-      const pSectionTarget = usesCanonicalPillarFields ? (p.sectionLink || section) : (p.section || section);
-      return `
-      <div class="pillar-mini" onclick="setSection('${page}','${esc(pSectionTarget)}')">
-        <div class="pm-top"><span class="pm-name">${esc(p.name || pillarNames[i])}</span><span class="pill ${esc(p.statusColor||'grey')}">${esc(p.statusLabel)}</span></div>
-        ${src && src.val ? `<div class="pm-source">${esc(src.val)}</div>` : ''}
-        <div class="pm-val"${p.valSize?` style="font-size:${p.valSize};"`:''}>${esc(pVal)}</div>
-        ${src && src.sub ? `<div class="pm-source">${esc(src.sub)}</div>` : ''}
-        <div class="pm-sub">${esc(pSub)}</div>
-      </div>`;
-    }).join('');
-  });
 
   // Fixed-stage bar list (Lead Funnel): like renderFixedMetricGrid, but for
   // bar-rows — one bar per label, in that fixed order, matched by item.name.
@@ -519,7 +480,7 @@ function applyData(data){
     { label: 'SM Content Organic Leads', value: getPath(data,'imfnd.marketing.smContentOrganicLeads') },
     { label: 'Other Tactics Leads (Webinars…etc)', value: getPath(data,'imfnd.marketing.otherTacticsLeads') },
     { label: 'Paid Leads', value: getPath(data,'imfnd.marketing.paidLeads') },
-    { label: 'Cost / Paid Leads', value: getPath(data,'imfnd.marketing.costPerPaidLead') },
+    { label: 'Cost / Paid Leads', value: formatPct(getPath(data,'imfnd.marketing.costPerPaidLead')) },
     { label: 'New Tickets Sold (Total)', value: getPath(data,'imfnd.marketing.newTicketsSold') },
     { label: 'New Tickets Conversion Rate (%)', value: formatPct(getPath(data,'imfnd.marketing.newTicketsConversionRate')) },
     { label: 'Organic New Sold Tickets', value: getPath(data,'imfnd.marketing.organicNewSoldTickets') },
@@ -528,15 +489,15 @@ function applyData(data){
     { label: 'Paid Conversion Rate (%)', value: formatPct(getPath(data,'imfnd.marketing.paidConversionRate')) },
     { label: 'Cost / Paid New Tickets (EGP)', value: getPath(data,'imfnd.marketing.costPerPaidNewTicket') },
     { label: 'Total Revenue (EGP)', value: getPath(data,'imfnd.marketing.totalRevenue') },
-    { label: 'Total ROAS', value: getPath(data,'imfnd.marketing.totalRoas') },
+    { label: 'Total ROAS', value: formatPct(getPath(data,'imfnd.marketing.totalRoas')) },
     { label: 'Total Paid Revenue (EGP)', value: getPath(data,'imfnd.marketing.totalPaidRevenue') },
     { label: 'Total Organic Revenue (EGP)', value: getPath(data,'imfnd.marketing.totalOrganicRevenue') },
-    { label: 'Paid ROAS', value: getPath(data,'imfnd.marketing.paidRoas') },
+    { label: 'Paid ROAS', value: formatPct(getPath(data,'imfnd.marketing.paidRoas')) },
     { label: 'Organic Clicks', value: getPath(data,'imfnd.marketing.organicClicks') },
     { label: 'Paid Clicks', value: getPath(data,'imfnd.marketing.paidClicks') },
-    { label: 'Paid CPC ($)', value: getPath(data,'imfnd.marketing.paidCpc') },
-    { label: 'Paid CPM ($)', value: getPath(data,'imfnd.marketing.paidCpm') },
-    { label: 'Paid CTR (%)', value: getPath(data,'imfnd.marketing.paidCtr') },
+    { label: 'Paid CPC ($)', value: formatPct(getPath(data,'imfnd.marketing.paidCpc')) },
+    { label: 'Paid CPM ($)', value: formatPct(getPath(data,'imfnd.marketing.paidCpm')) },
+    { label: 'Paid CTR (%)', value: formatPct(getPath(data,'imfnd.marketing.paidCtr')) },
   ];
   renderFixedMetricGrid('imfndKeyMetrics', imfndKeyMetricsData, imfndKeyMetricsLabels, kpiGridFn);
   // AS Key Metrics — same frontend-only rendering-adapter pattern as IMFND
@@ -551,7 +512,7 @@ function applyData(data){
     { label: 'SM Content Organic Leads', value: getPath(data,'as.marketing.smContentOrganicLeads') },
     { label: 'Other Tactics Leads (Webinars…etc)', value: getPath(data,'as.marketing.otherTacticsLeads') },
     { label: 'Paid Leads', value: getPath(data,'as.marketing.paidLeads') },
-    { label: 'Cost / Paid Leads', value: getPath(data,'as.marketing.costPerPaidLead') },
+    { label: 'Cost / Paid Leads', value: formatPct(getPath(data,'as.marketing.costPerPaidLead')) },
     { label: 'New Tickets Sold (Total)', value: getPath(data,'as.marketing.newTicketsSold') },
     { label: 'New Tickets Conversion Rate (%)', value: formatPct(getPath(data,'as.marketing.newTicketsConversionRate')) },
     { label: 'Organic New Sold Tickets', value: getPath(data,'as.marketing.organicNewSoldTickets') },
@@ -560,15 +521,15 @@ function applyData(data){
     { label: 'Paid Conversion Rate (%)', value: formatPct(getPath(data,'as.marketing.paidConversionRate')) },
     { label: 'Cost / Paid New Tickets (EGP)', value: getPath(data,'as.marketing.costPerPaidNewTicket') },
     { label: 'Total Revenue (EGP)', value: getPath(data,'as.marketing.totalRevenue') },
-    { label: 'Total ROAS', value: getPath(data,'as.marketing.totalRoas') },
+    { label: 'Total ROAS', value: formatPct(getPath(data,'as.marketing.totalRoas')) },
     { label: 'Total Paid Revenue (EGP)', value: getPath(data,'as.marketing.totalPaidRevenue') },
     { label: 'Total Organic Revenue (EGP)', value: getPath(data,'as.marketing.totalOrganicRevenue') },
-    { label: 'Paid ROAS', value: getPath(data,'as.marketing.paidRoas') },
+    { label: 'Paid ROAS', value: formatPct(getPath(data,'as.marketing.paidRoas')) },
     { label: 'Organic Clicks', value: getPath(data,'as.marketing.organicClicks') },
     { label: 'Paid Clicks', value: getPath(data,'as.marketing.paidClicks') },
-    { label: 'Paid CPC ($)', value: getPath(data,'as.marketing.paidCpc') },
-    { label: 'Paid CPM ($)', value: getPath(data,'as.marketing.paidCpm') },
-    { label: 'Paid CTR (%)', value: getPath(data,'as.marketing.paidCtr') },
+    { label: 'Paid CPC ($)', value: formatPct(getPath(data,'as.marketing.paidCpc')) },
+    { label: 'Paid CPM ($)', value: formatPct(getPath(data,'as.marketing.paidCpm')) },
+    { label: 'Paid CTR (%)', value: formatPct(getPath(data,'as.marketing.paidCtr')) },
   ];
   renderFixedMetricGrid('asKeyMetrics', asKeyMetricsData, asKeyMetricsLabels, kpiGridFn);
   // Oligence Revenue Recognition — frontend-only rendering adapter (Stage
